@@ -6,6 +6,8 @@ export interface User {
   email: string;
   skillLevel: SkillLevel;
   isAdmin: boolean;
+  hasAcceptedAgreement?: boolean;
+  progress?: number;
 }
 
 export interface Submission {
@@ -13,6 +15,10 @@ export interface Submission {
   userId: string;
   taskId: string;
   content: string;
+  projectLink: string;
+  socialMediaLink: string;
+  learningReflection: string;
+  peersEngaged: number;
   status: "pending" | "approved" | "rejected";
   createdAt: Date;
 }
