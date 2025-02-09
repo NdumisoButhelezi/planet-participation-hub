@@ -24,3 +24,21 @@ export interface Task {
   videoUrl: string;
   skillLevel: SkillLevel;
 }
+
+export interface Playlist {
+  skillLevel: SkillLevel;
+  urls: string[];
+}
+
+export const PLAYLISTS: Record<SkillLevel, string[]> = {
+  beginner: [
+    "https://youtube.com/playlist?list=PLnbRHHpYESGILKGfoOn-Bxlk9_O2izivX",
+    "https://youtube.com/playlist?list=PLnbRHHpYESGKa-tkA3Tr_A_xQiHDm0kaK"
+  ],
+  intermediate: [
+    "https://youtube.com/playlist?list=PLnbRHHpYESGIKkP62ebY8fHnraAn4xf8J"
+  ],
+  advanced: [
+    "https://youtube.com/playlist?list=PLnbRHHpYESGJ2NNCMFdmTEzzSKfJQb-Rn"
+  ]
+};
