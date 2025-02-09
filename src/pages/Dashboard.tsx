@@ -2,15 +2,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
-import { User, PLAYLISTS } from "@/types/user";
+import { doc, getDoc, collection, addDoc } from "firebase/firestore";
+import { User, PLAYLISTS, Submission } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Play, CheckCircle, ArrowRight } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Play, CheckCircle, ArrowRight, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [reflection, setReflection] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -38,6 +40,42 @@ const Dashboard = () => {
     return () => unsubscribe();
   }, [navigate, toast]);
 
+  const handleSubmitReflection = async (playlistUrl: string) => {
+    if (!user || !reflection.trim()) {
+      toast({
+        title: "Error",
+        description: "Please write your reflection before submitting",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const submission: Omit<Submission, "id"> = {
+        userId: user.id,
+        taskId: playlistUrl,
+        content: reflection,
+        status: "pending",
+        createdAt: new Date(),
+      };
+
+      await addDoc(collection(db, "submissions"), submission);
+      
+      toast({
+        title: "Success",
+        description: "Your reflection has been submitted for review",
+      });
+      
+      setReflection("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit reflection",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -52,10 +90,22 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <nav className="w-full px-6 py-4 bg-white/80 backdrop-blur-lg border-b border-gray-100">
         <div className="container mx-auto flex justify-between items-center">
-          <div className="text-xl font-semibold">Planet 09 AI</div>
-          <Button variant="ghost" onClick={() => auth.signOut()}>
-            Sign Out
-          </Button>
+          <div className="text-xl font-semibold text-blue-600">Planet 09 AI</div>
+          <div className="flex items-center gap-4">
+            {user.isAdmin && (
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/admin")}
+                className="flex items-center gap-2"
+              >
+                <Shield className="h-4 w-4" />
+                Admin Panel
+              </Button>
+            )}
+            <Button variant="ghost" onClick={() => auth.signOut()}>
+              Sign Out
+            </Button>
+          </div>
         </div>
       </nav>
 
@@ -77,19 +127,38 @@ const Dashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                    <iframe
+                      src={`${playlistUrl.replace('playlist?list=', 'embed/videoseries?list=')}`}
+                      title={`Learning Path ${index + 1}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full"
+                    />
+                  </div>
+                  
                   <div className="flex items-center space-x-2 text-blue-600">
                     <Play className="h-5 w-5" />
-                    <span>Video Content</span>
+                    <span>Watch Videos</span>
                   </div>
+                  
                   <div className="flex items-center space-x-2 text-green-600">
                     <CheckCircle className="h-5 w-5" />
                     <span>Track Progress</span>
                   </div>
+
+                  <Textarea
+                    placeholder="Write your reflection about what you learned from these videos..."
+                    value={reflection}
+                    onChange={(e) => setReflection(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+
                   <Button 
                     className="w-full bg-blue-600 hover:bg-blue-700"
-                    onClick={() => window.open(playlistUrl, '_blank')}
+                    onClick={() => handleSubmitReflection(playlistUrl)}
                   >
-                    Start Learning
+                    Submit Reflection
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardContent>

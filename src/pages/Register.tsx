@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +20,7 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [skillLevel, setSkillLevel] = useState<SkillLevel>("beginner");
+  const [adminKey, setAdminKey] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -27,11 +28,15 @@ const Register = () => {
     e.preventDefault();
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
+      const isAdmin = adminKey === "planet09admin"; // Simple admin key check
+      
       await setDoc(doc(db, "users", userCredential.user.uid), {
         email,
         skillLevel,
-        isAdmin: false,
+        isAdmin,
       });
+
       toast({
         title: "Account created",
         description: "Welcome to Planet 09 AI!",
@@ -50,8 +55,8 @@ const Register = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg backdrop-blur-lg border border-gray-100">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">Create Account</h1>
-          <p className="text-gray-500">Join Planet 09 AI and start your learning journey</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-blue-600">Planet 09 AI</h1>
+          <p className="text-gray-500">Join us and start your learning journey</p>
         </div>
         <form onSubmit={handleRegister} className="space-y-4">
           <div className="space-y-2">
@@ -89,12 +94,21 @@ const Register = () => {
               </SelectContent>
             </Select>
           </div>
-          <Button type="submit" className="w-full">
+          <div className="space-y-2">
+            <Input
+              type="password"
+              placeholder="Admin Key (optional)"
+              value={adminKey}
+              onChange={(e) => setAdminKey(e.target.value)}
+              className="w-full px-4 py-2"
+            />
+          </div>
+          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
             Create Account
           </Button>
         </form>
         <div className="text-center text-sm">
-          <a href="/login" className="text-gray-600 hover:text-gray-900 transition-colors">
+          <a href="/login" className="text-blue-600 hover:text-blue-700 transition-colors">
             Already have an account? Sign in
           </a>
         </div>

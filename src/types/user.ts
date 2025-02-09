@@ -5,7 +5,7 @@ export interface User {
   id: string;
   email: string;
   skillLevel: SkillLevel;
-  isAdmin?: boolean;
+  isAdmin: boolean;
 }
 
 export interface Submission {
