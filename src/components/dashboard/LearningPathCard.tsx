@@ -1,0 +1,104 @@
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Play, CheckCircle, ArrowRight } from "lucide-react";
+
+interface LearningPathCardProps {
+  index: number;
+  playlistUrl: string;
+  projectLink: string;
+  socialMediaLink: string;
+  peersEngaged: string;
+  learningReflection: string;
+  onProjectLinkChange: (value: string) => void;
+  onSocialMediaLinkChange: (value: string) => void;
+  onPeersEngagedChange: (value: string) => void;
+  onLearningReflectionChange: (value: string) => void;
+  onSubmitReflection: (playlistUrl: string) => void;
+}
+
+const LearningPathCard = ({
+  index,
+  playlistUrl,
+  projectLink,
+  socialMediaLink,
+  peersEngaged,
+  learningReflection,
+  onProjectLinkChange,
+  onSocialMediaLinkChange,
+  onPeersEngagedChange,
+  onLearningReflectionChange,
+  onSubmitReflection,
+}: LearningPathCardProps) => {
+  return (
+    <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-xl font-semibold">
+          Learning Path {index + 1}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
+          <iframe
+            src={`${playlistUrl.replace('playlist?list=', 'embed/videoseries?list=')}`}
+            title={`Learning Path ${index + 1}`}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full"
+          />
+        </div>
+        
+        <div className="flex items-center space-x-2 text-blue-600">
+          <Play className="h-5 w-5" />
+          <span>Watch Videos</span>
+        </div>
+        
+        <div className="flex items-center space-x-2 text-green-600">
+          <CheckCircle className="h-5 w-5" />
+          <span>Track Progress</span>
+        </div>
+
+        <div className="space-y-4">
+          <Input
+            placeholder="Project GitHub/Drive Link"
+            value={projectLink}
+            onChange={(e) => onProjectLinkChange(e.target.value)}
+          />
+          
+          <Input
+            placeholder="Social Media Post Link"
+            value={socialMediaLink}
+            onChange={(e) => onSocialMediaLinkChange(e.target.value)}
+          />
+          
+          <Input
+            type="number"
+            placeholder="Number of peers engaged with"
+            value={peersEngaged}
+            onChange={(e) => onPeersEngagedChange(e.target.value)}
+            min="0"
+          />
+
+          <Textarea
+            placeholder="Write your reflection about what you learned..."
+            value={learningReflection}
+            onChange={(e) => onLearningReflectionChange(e.target.value)}
+            className="min-h-[100px]"
+          />
+
+          <Button 
+            className="w-full bg-blue-600 hover:bg-blue-700"
+            onClick={() => onSubmitReflection(playlistUrl)}
+          >
+            Submit Reflection
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default LearningPathCard;
