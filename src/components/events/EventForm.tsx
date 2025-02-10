@@ -89,11 +89,11 @@ const EventForm = ({
                 <Checkbox
                   checked={targetGroup.includes("Student")}
                   onCheckedChange={(checked) => {
-                    setTargetGroup(prev => 
-                      checked 
-                        ? [...prev, "Student"]
-                        : prev.filter(g => g !== "Student")
-                    );
+                    if (checked) {
+                      setTargetGroup([...targetGroup, "Student"]);
+                    } else {
+                      setTargetGroup(targetGroup.filter(g => g !== "Student"));
+                    }
                   }}
                 />
                 <span>Student</span>
@@ -102,11 +102,11 @@ const EventForm = ({
                 <Checkbox
                   checked={targetGroup.includes("Staff")}
                   onCheckedChange={(checked) => {
-                    setTargetGroup(prev => 
-                      checked 
-                        ? [...prev, "Staff"]
-                        : prev.filter(g => g !== "Staff")
-                    );
+                    if (checked) {
+                      setTargetGroup([...targetGroup, "Staff"]);
+                    } else {
+                      setTargetGroup(targetGroup.filter(g => g !== "Staff"));
+                    }
                   }}
                 />
                 <span>Staff</span>
