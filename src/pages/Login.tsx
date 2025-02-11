@@ -64,7 +64,7 @@ const Login = () => {
           </Button>
         </form>
         <div className="text-center text-sm">
-          <a href="/register" className="text-gray-500 hover:text-gray-900 transition-colors">
+          <a href="/register" className="text-gray-600 hover:text-gray-900 transition-colors">
             Don't have an account? Sign up
           </a>
         </div>
