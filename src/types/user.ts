@@ -1,4 +1,3 @@
-
 export type SkillLevel = "beginner" | "intermediate" | "advanced";
 
 export interface User {
@@ -8,6 +7,16 @@ export interface User {
   isAdmin: boolean;
   hasAcceptedAgreement?: boolean;
   progress?: number;
+  fullName?: string;
+  studentNumber?: string;
+  phoneNumber?: string;
+  course?: string;
+  yearOfStudy?: string;
+  aiInterestArea?: string;
+  linkedinProfile?: string;
+  githubProfile?: string;
+  learningStyle?: "solo" | "teamwork" | "both";
+  motivation?: string;
 }
 
 export interface Submission {
