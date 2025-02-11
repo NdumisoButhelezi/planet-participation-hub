@@ -1,17 +1,30 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "firebase/firestore";
 import { User, Submission } from "@/types/user";
+import { Event, Perspective } from "@/types/events";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CheckCircle, XCircle, Shield } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Shield, Plus } from "lucide-react";
+import EventForm from "@/components/events/EventForm";
+import EventCard from "@/components/events/EventCard";
 
 const Admin = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [perspective, setPerspective] = useState<Perspective>("STEWARDSHIP");
+  const [name, setName] = useState("");
+  const [date, setDate] = useState("");
+  const [targetGroup, setTargetGroup] = useState<("Student" | "Staff")[]>([]);
+  const [objectives, setObjectives] = useState("");
+  const [outcome, setOutcome] = useState("");
+  const [perspectiveWeighting, setPerspectiveWeighting] = useState("");
+  
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -31,7 +44,6 @@ const Admin = () => {
         return;
       }
 
-      // Fetch users and submissions
       const usersSnapshot = await getDocs(collection(db, "users"));
       const submissionsSnapshot = await getDocs(collection(db, "submissions"));
       
@@ -41,6 +53,23 @@ const Admin = () => {
 
     checkAdmin();
   }, [navigate]);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const eventsSnapshot = await getDocs(collection(db, "events"));
+        const eventsData = eventsSnapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        })) as Event[];
+        setEvents(eventsData);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   const makeAdmin = async (userId: string) => {
     try {
@@ -88,6 +117,76 @@ const Admin = () => {
     }
   };
 
+  const handleCreateEvent = async () => {
+    try {
+      const newEvent = {
+        perspective,
+        name,
+        date,
+        targetGroup,
+        objectives,
+        outcome,
+        perspectiveWeighting: parseInt(perspectiveWeighting),
+      };
+
+      const docRef = await addDoc(collection(db, "events"), newEvent);
+      setEvents([...events, { id: docRef.id, ...newEvent }]);
+      setShowEventForm(false);
+      resetEventForm();
+      
+      toast({
+        title: "Success",
+        description: "Event created successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create event",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditEvent = (event: Event) => {
+    setSelectedEvent(event);
+    setPerspective(event.perspective);
+    setName(event.name);
+    setDate(event.date);
+    setTargetGroup(event.targetGroup);
+    setObjectives(event.objectives);
+    setOutcome(event.outcome);
+    setPerspectiveWeighting(event.perspectiveWeighting.toString());
+    setShowEventForm(true);
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      await deleteDoc(doc(db, "events", eventId));
+      setEvents(events.filter(event => event.id !== eventId));
+      toast({
+        title: "Success",
+        description: "Event deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete event",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetEventForm = () => {
+    setSelectedEvent(null);
+    setPerspective("STEWARDSHIP");
+    setName("");
+    setDate("");
+    setTargetGroup([]);
+    setObjectives("");
+    setOutcome("");
+    setPerspectiveWeighting("");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <nav className="w-full px-6 py-4 bg-white/80 backdrop-blur-lg border-b border-gray-100">
@@ -101,6 +200,13 @@ const Admin = () => {
             Back to Dashboard
           </Button>
           <div className="text-xl font-semibold text-blue-600">Planet 09 AI Admin</div>
+          <Button 
+            onClick={() => setShowEventForm(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Plus className="h-4 w-4" />
+            Create New Event
+          </Button>
         </div>
       </nav>
 
@@ -134,6 +240,26 @@ const Admin = () => {
                       </Button>
                     )}
                   </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white">
+            <CardHeader>
+              <CardTitle>Events Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {events.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    isAdmin={true}
+                    onEdit={() => handleEditEvent(event)}
+                    onDelete={() => handleDeleteEvent(event.id)}
+                    onRegister={() => {}}
+                  />
                 ))}
               </div>
             </CardContent>
@@ -201,6 +327,27 @@ const Admin = () => {
           </Card>
         </div>
       </main>
+
+      <EventForm
+        open={showEventForm}
+        onOpenChange={setShowEventForm}
+        selectedEvent={selectedEvent}
+        onSubmit={handleCreateEvent}
+        perspective={perspective}
+        setPerspective={setPerspective}
+        name={name}
+        setName={setName}
+        date={date}
+        setDate={setDate}
+        targetGroup={targetGroup}
+        setTargetGroup={setTargetGroup}
+        objectives={objectives}
+        setObjectives={setObjectives}
+        outcome={outcome}
+        setOutcome={setOutcome}
+        perspectiveWeighting={perspectiveWeighting}
+        setPerspectiveWeighting={setPerspectiveWeighting}
+      />
     </div>
   );
 };

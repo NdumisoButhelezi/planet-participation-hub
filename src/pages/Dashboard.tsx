@@ -1,14 +1,15 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, collection, addDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, updateDoc, getDocs } from "firebase/firestore";
 import { User, PLAYLISTS, Submission } from "@/types/user";
+import { Event } from "@/types/events";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import UserAgreementDialog from "@/components/dashboard/UserAgreementDialog";
 import LearningPathCard from "@/components/dashboard/LearningPathCard";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import EventCard from "@/components/events/EventCard";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -17,6 +18,7 @@ const Dashboard = () => {
   const [socialMediaLink, setSocialMediaLink] = useState("");
   const [learningReflection, setLearningReflection] = useState("");
   const [peersEngaged, setPeersEngaged] = useState("0");
+  const [events, setEvents] = useState<Event[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -116,6 +118,37 @@ const Dashboard = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const eventsSnapshot = await getDocs(collection(db, "events"));
+        const eventsData = eventsSnapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data() 
+        })) as Event[];
+        setEvents(eventsData);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load events",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchEvents();
+  }, [toast]);
+
+  const handleRegisterEvent = async (eventId: string) => {
+    if (!user) return;
+    
+    toast({
+      title: "Success",
+      description: "You have registered for this event",
+    });
+  };
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -131,7 +164,7 @@ const Dashboard = () => {
       <DashboardHeader user={user} />
 
       <main className="container mx-auto px-6 py-8">
-        <div className="space-y-6">
+        <div className="space-y-12">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Welcome!</h1>
             <p className="text-gray-600 mt-2">
@@ -162,6 +195,22 @@ const Dashboard = () => {
                 onSubmitReflection={handleSubmitReflection}
               />
             ))}
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Upcoming Events</h2>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {events.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  isAdmin={false}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
+                  onRegister={handleRegisterEvent}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </main>
