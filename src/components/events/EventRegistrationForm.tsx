@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { db, auth } from "@/lib/firebase";
 import { addDoc, collection } from "firebase/firestore";
@@ -15,6 +16,16 @@ interface EventRegistrationFormProps {
   eventId: string;
 }
 
+const AI_INTERESTS = [
+  "Machine Learning",
+  "Data Science",
+  "Natural Language Processing",
+  "Computer Vision",
+  "Robotics",
+  "Deep Learning",
+  "Reinforcement Learning"
+];
+
 const EventRegistrationForm = ({ open, onOpenChange, eventId }: EventRegistrationFormProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
@@ -24,12 +35,21 @@ const EventRegistrationForm = ({ open, onOpenChange, eventId }: EventRegistratio
     phoneNumber: "",
     course: "",
     yearOfStudy: "",
-    aiInterestArea: "",
+    aiInterestArea: [] as string[],
     linkedinProfile: "",
     githubProfile: "",
     learningStyle: "",
     motivation: ""
   });
+
+  const handleInterestChange = (interest: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      aiInterestArea: checked 
+        ? [...prev.aiInterestArea, interest]
+        : prev.aiInterestArea.filter(i => i !== interest)
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,12 +145,23 @@ const EventRegistrationForm = ({ open, onOpenChange, eventId }: EventRegistratio
               />
             </div>
 
-            <Input
-              placeholder="AI Interest Area (ML, Data Science, NLP, etc.)"
-              value={formData.aiInterestArea}
-              onChange={handleChange("aiInterestArea")}
-              required
-            />
+            <div className="space-y-2">
+              <p className="font-medium text-gray-700">AI Interest Areas:</p>
+              <div className="grid grid-cols-2 gap-2">
+                {AI_INTERESTS.map((interest) => (
+                  <div key={interest} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={interest}
+                      checked={formData.aiInterestArea.includes(interest)}
+                      onCheckedChange={(checked) => handleInterestChange(interest, checked as boolean)}
+                    />
+                    <label htmlFor={interest} className="text-sm text-gray-600">
+                      {interest}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input

@@ -1,3 +1,4 @@
+
 export type SkillLevel = "beginner" | "intermediate" | "advanced";
 
 export interface User {
@@ -7,6 +8,7 @@ export interface User {
   isAdmin: boolean;
   hasAcceptedAgreement?: boolean;
   progress?: number;
+  points?: number;
   fullName?: string;
   studentNumber?: string;
   phoneNumber?: string;
