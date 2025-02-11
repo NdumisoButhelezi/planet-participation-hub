@@ -23,15 +23,17 @@ const EventCard = ({ event, isAdmin, onEdit, onDelete, onRegister }: EventCardPr
               variant="ghost" 
               size="icon"
               onClick={() => onEdit(event)}
+              className="hover:bg-blue-50"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-4 w-4 text-blue-600" />
             </Button>
             <Button 
               variant="ghost" 
               size="icon"
               onClick={() => onDelete(event.id)}
+              className="hover:bg-red-50"
             >
-              <Trash className="h-4 w-4" />
+              <Trash className="h-4 w-4 text-red-600" />
             </Button>
           </div>
         )}
@@ -46,16 +48,16 @@ const EventCard = ({ event, isAdmin, onEdit, onDelete, onRegister }: EventCardPr
           <span>{event.targetGroup.join(", ")}</span>
         </div>
         <div className="space-y-2">
-          <p className="font-medium">Objectives:</p>
+          <p className="font-medium text-gray-700">Objectives:</p>
           <p className="text-sm text-gray-600">{event.objectives}</p>
         </div>
         <div className="space-y-2">
-          <p className="font-medium">Outcome:</p>
+          <p className="font-medium text-gray-700">Outcome:</p>
           <p className="text-sm text-gray-600">{event.outcome}</p>
         </div>
         <div className="pt-4">
           <Button 
-            className="w-full" 
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white" 
             onClick={() => onRegister(event.id)}
           >
             Register for Event

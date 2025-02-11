@@ -22,10 +22,10 @@ const EventsHeader = ({ isAdmin, onNewEvent }: EventsHeaderProps) => {
           {isAdmin && (
             <Button 
               onClick={onNewEvent}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
             >
               <Plus className="h-4 w-4" />
-              New Event
+              Create New Event
             </Button>
           )}
         </div>
