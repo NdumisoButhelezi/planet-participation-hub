@@ -3,116 +3,192 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import ProgramAgreementDialog from "@/components/shared/ProgramAgreementDialog";
-import { Youtube, Github, Linkedin, Globe } from "lucide-react";
+import { Brain, Trophy, Users, Calendar, ArrowRight, Github, Linkedin, Globe, MessageSquare, Rocket, Award, Network, Timer } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
   const [showAgreement, setShowAgreement] = useState(false);
 
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-600 via-blue-500 to-purple-600 relative overflow-hidden">
-      {/* Bubble Overlays */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-blue-400/20 blur-3xl animate-pulse"></div>
-        <div className="absolute top-40 right-20 w-96 h-96 rounded-full bg-blue-300/20 blur-3xl animate-pulse" style={{ animationDelay: "1s" }}></div>
-        <div className="absolute bottom-20 left-1/3 w-72 h-72 rounded-full bg-purple-400/20 blur-3xl animate-pulse" style={{ animationDelay: "2s" }}></div>
-      </div>
+  const features = [
+    {
+      icon: <Rocket className="w-8 h-8 text-blue-600" />,
+      title: "AI Projects",
+      description: "Build real-world AI applications with hands-on guidance"
+    },
+    {
+      icon: <Trophy className="w-8 h-8 text-purple-600" />,
+      title: "Learn & Earn",
+      description: "Earn rewards while mastering AI concepts"
+    },
+    {
+      icon: <Users className="w-8 h-8 text-green-600" />,
+      title: "Community",
+      description: "Join a thriving community of AI enthusiasts"
+    },
+    {
+      icon: <Award className="w-8 h-8 text-orange-600" />,
+      title: "Certification",
+      description: "Get certified in cutting-edge AI technologies"
+    }
+  ];
 
-      <nav className="w-full px-6 py-4 flex justify-between items-center bg-white/10 backdrop-blur-lg border-b border-white/20 relative z-10">
-        <div className="text-xl font-semibold text-white">Planet 09 AI</div>
-        <div className="space-x-4">
-          <Button variant="ghost" onClick={() => navigate("/login")} className="text-white hover:text-white hover:bg-white/20">
-            Sign In
-          </Button>
-          <Button onClick={() => navigate("/register")} className="bg-white text-blue-600 hover:bg-white/90">
-            Get Started
-          </Button>
+  const stats = [
+    { number: "500+", label: "Active Users" },
+    { number: "100+", label: "AI Projects" },
+    { number: "50+", label: "Workshops" },
+    { number: "1000+", label: "Community Posts" }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+      {/* Header */}
+      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Brain className="w-8 h-8 text-blue-600" />
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 text-transparent bg-clip-text">
+                Planet 09 AI
+              </span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" onClick={() => navigate("/login")} className="text-gray-600 hover:text-blue-600">
+                Sign In
+              </Button>
+              <Button onClick={() => navigate("/register")} className="bg-blue-600 hover:bg-blue-700 text-white">
+                Get Started
+              </Button>
+            </div>
+          </div>
         </div>
       </nav>
-      
-      <main className="flex-1 container mx-auto px-6 py-12 relative z-10">
-        <div className="max-w-3xl mx-auto text-center space-y-8">
-          <div className="animate-fade-in">
-            <h1 className="text-5xl font-bold tracking-tight text-white mb-4">
-              Enhance Your Skills with Planet 09 AI
-            </h1>
-            <p className="text-xl text-white/80">
-              Join our platform to access curated learning paths, hands-on projects, and expert
-              guidance tailored to your skill level.
-            </p>
-          </div>
-          
-          <div className="space-y-4 md:space-y-0 md:space-x-4 animate-fade-in" style={{ animationDelay: "200ms" }}>
-            <Button 
-              size="lg" 
-              onClick={() => navigate("/register")}
-              className="bg-white text-blue-600 hover:bg-white/90"
-            >
-              Start Learning
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={() => setShowAgreement(true)}
-              className="text-white border-white hover:bg-white/20"
-            >
-              Learn More
-            </Button>
-          </div>
 
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 animate-fade-in" style={{ animationDelay: "400ms" }}>
-            {[
-              { title: "Projects", description: "Build real-world projects" },
-              { title: "Workshops", description: "Learn from industry experts" },
-              { title: "Community", description: "Connect with peers" }
-            ].map((item, index) => (
-              <div key={index} className="p-6 rounded-lg bg-white/10 backdrop-blur-md border border-white/20">
-                <h3 className="text-xl font-semibold text-white mb-2">{item.title}</h3>
-                <p className="text-white/80">{item.description}</p>
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 px-4">
+        <div className="container mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h1 className="text-5xl font-bold leading-tight mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 text-transparent bg-clip-text">
+                Level Up Your AI Skills with Planet 09
+              </h1>
+              <p className="text-xl text-gray-600 mb-8">
+                Join our community to access curated learning paths, hands-on projects, and expert guidance tailored to your skill level.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button 
+                  onClick={() => navigate("/register")}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-full flex items-center justify-center"
+                >
+                  Start Learning <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowAgreement(true)}
+                  className="border-blue-600 text-blue-600 px-8 py-6 rounded-full hover:bg-blue-50"
+                >
+                  Learn More
+                </Button>
+              </div>
+            </div>
+            <div className="relative hidden md:block">
+              <img
+                src="https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80"
+                alt="AI Learning"
+                className="rounded-2xl shadow-2xl"
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent rounded-2xl"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">Why Choose Planet 09 AI?</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <div key={index} className="p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <div className="mb-4">{feature.icon}</div>
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
               </div>
             ))}
           </div>
         </div>
-      </main>
+      </section>
 
-      <footer className="relative z-10 mt-auto bg-white/10 backdrop-blur-lg border-t border-white/20">
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <div className="flex items-center space-x-2">
-              <Globe className="w-6 h-6 text-white" />
-              <span className="text-white font-semibold text-lg">Planet 09 AI</span>
+      {/* Stats Section */}
+      <section className="py-20 bg-gradient-to-br from-blue-50 to-purple-50">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">Our Impact</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {stats.map((stat, index) => (
+              <div key={index} className="p-6 bg-white/80 backdrop-blur-md rounded-xl shadow-sm">
+                <div className="text-4xl font-bold text-blue-600 mb-2">{stat.number}</div>
+                <div className="text-gray-600">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <Brain className="w-6 h-6 text-blue-400" />
+                <span className="text-xl font-bold">Planet 09 AI</span>
+              </div>
+              <p className="text-gray-400">Shaping the future of AI education</p>
             </div>
-            
-            <div className="flex space-x-6">
-              <a 
-                href="https://www.youtube.com/@NduAILearning" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-white hover:text-white/80 transition-colors"
-              >
-                <Youtube className="w-6 h-6" />
-              </a>
-              <a 
-                href="https://github.com/NdumisoButhelezi" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-white hover:text-white/80 transition-colors"
-              >
-                <Github className="w-6 h-6" />
-              </a>
-              <a 
-                href="https://www.linkedin.com/in/ndumiso-buthelezi-81581021b/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-white hover:text-white/80 transition-colors"
-              >
-                <Linkedin className="w-6 h-6" />
-              </a>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Connect With Us</h3>
+              <div className="flex space-x-4">
+                <a 
+                  href="https://www.youtube.com/@NduAILearning" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <Globe className="w-6 h-6" />
+                </a>
+                <a 
+                  href="https://github.com/NdumisoButhelezi" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <Github className="w-6 h-6" />
+                </a>
+                <a 
+                  href="https://www.linkedin.com/in/ndumiso-buthelezi-81581021b/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
+                  <Linkedin className="w-6 h-6" />
+                </a>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Newsletter</h3>
+              <div className="flex">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="bg-gray-800 text-white px-4 py-2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                />
+                <Button className="rounded-l-none bg-blue-600 hover:bg-blue-700">
+                  Subscribe
+                </Button>
+              </div>
             </div>
           </div>
-          
-          <div className="mt-6 text-center text-white/60 text-sm">
-            © {new Date().getFullYear()} Planet 09 AI. All rights reserved.
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>© {new Date().getFullYear()} Planet 09 AI. All rights reserved.</p>
           </div>
         </div>
       </footer>
