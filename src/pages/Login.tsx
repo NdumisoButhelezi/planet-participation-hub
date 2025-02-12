@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { Brain } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -52,7 +53,13 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg backdrop-blur-lg border border-gray-100">
-        <div className="space-y-2 text-center">
+        <div className="text-center">
+          <a href="/" className="inline-flex items-center gap-2 mb-6 hover:opacity-80 transition-opacity">
+            <Brain className="h-8 w-8 text-blue-600" />
+            <span className="text-2xl font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 text-transparent bg-clip-text">
+              Planet 09 AI
+            </span>
+          </a>
           <h1 className="text-3xl font-semibold tracking-tight">Welcome Back</h1>
           <p className="text-gray-500">Enter your credentials to access your account</p>
         </div>
@@ -87,10 +94,15 @@ const Login = () => {
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
         </form>
-        <div className="text-center text-sm">
+        <div className="text-center text-sm space-y-2">
           <a href="/register" className="text-gray-600 hover:text-gray-900 transition-colors">
             Don't have an account? Sign up
           </a>
+          <div>
+            <a href="/" className="text-blue-600 hover:text-blue-700 transition-colors">
+              Return to Home Page
+            </a>
+          </div>
         </div>
       </div>
     </div>

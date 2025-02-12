@@ -2,12 +2,13 @@
 import { useState } from "react";
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import type { SkillLevel } from "@/types/user";
+import { Brain } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -54,8 +55,14 @@ const Register = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg backdrop-blur-lg border border-gray-100">
-        <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight text-blue-600">Planet 09 AI</h1>
+        <div className="text-center">
+          <a href="/" className="inline-flex items-center gap-2 mb-6 hover:opacity-80 transition-opacity">
+            <Brain className="h-8 w-8 text-blue-600" />
+            <span className="text-2xl font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 text-transparent bg-clip-text">
+              Planet 09 AI
+            </span>
+          </a>
+          <h1 className="text-3xl font-semibold tracking-tight">Create Account</h1>
           <p className="text-gray-500">Join us and start your learning journey</p>
         </div>
         <form onSubmit={handleRegister} className="space-y-4">
@@ -107,10 +114,15 @@ const Register = () => {
             Create Account
           </Button>
         </form>
-        <div className="text-center text-sm">
-          <a href="/login" className="text-blue-600 hover:text-blue-700 transition-colors">
+        <div className="text-center text-sm space-y-2">
+          <a href="/login" className="text-gray-600 hover:text-gray-900 transition-colors">
             Already have an account? Sign in
           </a>
+          <div>
+            <a href="/" className="text-blue-600 hover:text-blue-700 transition-colors">
+              Return to Home Page
+            </a>
+          </div>
         </div>
       </div>
     </div>
