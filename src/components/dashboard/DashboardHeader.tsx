@@ -1,10 +1,11 @@
 
+import { useState } from "react";
 import { User } from "@/types/user";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Shield } from "lucide-react";
+import { Brain, UserCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "@/lib/firebase";
+import ProfileDialog from "./ProfileDialog";
 
 interface DashboardHeaderProps {
   user: User;
@@ -12,11 +13,18 @@ interface DashboardHeaderProps {
 
 const DashboardHeader = ({ user }: DashboardHeaderProps) => {
   const navigate = useNavigate();
+  const [showProfile, setShowProfile] = useState(false);
 
   return (
     <nav className="w-full px-6 py-4 bg-white/80 backdrop-blur-lg border-b border-gray-100">
       <div className="container mx-auto flex justify-between items-center">
-        <div className="text-xl font-semibold text-blue-600">Planet 09 AI</div>
+        <a 
+          href="/" 
+          className="text-xl font-semibold text-blue-600 hover:opacity-80 transition-opacity flex items-center gap-2"
+        >
+          <Brain className="h-6 w-6" />
+          <span>Planet 09 AI</span>
+        </a>
         <div className="flex items-center gap-4">
           {user.isAdmin && (
             <Button 
@@ -24,15 +32,27 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
               onClick={() => navigate("/admin")}
               className="flex items-center gap-2"
             >
-              <Shield className="h-4 w-4" />
               Admin Panel
             </Button>
           )}
+          <Button 
+            variant="ghost" 
+            onClick={() => setShowProfile(true)}
+            className="flex items-center gap-2"
+          >
+            <UserCircle className="h-4 w-4" />
+            Profile
+          </Button>
           <Button variant="ghost" onClick={() => auth.signOut()}>
             Sign Out
           </Button>
         </div>
       </div>
+
+      <ProfileDialog 
+        open={showProfile}
+        onOpenChange={setShowProfile}
+      />
     </nav>
   );
 };

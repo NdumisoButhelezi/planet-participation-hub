@@ -1,13 +1,12 @@
-
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db, auth } from "@/lib/firebase";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, doc, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 interface EventRegistrationFormProps {
@@ -41,6 +40,39 @@ const EventRegistrationForm = ({ open, onOpenChange, eventId }: EventRegistratio
     learningStyle: "",
     motivation: ""
   });
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const userId = auth.currentUser?.uid;
+      if (!userId) return;
+
+      try {
+        const docRef = doc(db, "users", userId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().profile) {
+          const profile = docSnap.data().profile;
+          setFormData(prev => ({
+            ...prev,
+            fullName: profile.fullName || "",
+            studentNumber: profile.studentNumber || "",
+            email: profile.email || "",
+            phoneNumber: profile.phoneNumber || "",
+            course: profile.course || "",
+            yearOfStudy: profile.yearOfStudy || "",
+            linkedinProfile: profile.linkedinProfile || "",
+            githubProfile: profile.githubProfile || "",
+            learningStyle: profile.learningStyle || "",
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      }
+    };
+
+    if (open) {
+      fetchUserProfile();
+    }
+  }, [open]);
 
   const handleInterestChange = (interest: string, checked: boolean) => {
     setFormData(prev => ({
