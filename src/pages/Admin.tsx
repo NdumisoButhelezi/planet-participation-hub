@@ -7,9 +7,10 @@ import { Event, Perspective } from "@/types/events";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CheckCircle, XCircle, Shield, Plus } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Shield, Plus, Home, Users, Calendar, FileText } from "lucide-react";
 import EventForm from "@/components/events/EventForm";
 import EventCard from "@/components/events/EventCard";
+import EventRegistrationsView from "@/components/admin/EventRegistrationsView";
 
 const Admin = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -17,14 +18,7 @@ const Admin = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [perspective, setPerspective] = useState<Perspective>("STEWARDSHIP");
-  const [name, setName] = useState("");
-  const [date, setDate] = useState("");
-  const [targetGroup, setTargetGroup] = useState<("Student" | "Staff")[]>([]);
-  const [objectives, setObjectives] = useState("");
-  const [outcome, setOutcome] = useState("");
-  const [perspectiveWeighting, setPerspectiveWeighting] = useState("");
-  
+  const [currentView, setCurrentView] = useState<'users' | 'events' | 'submissions' | 'registrations'>('users');
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -187,31 +181,10 @@ const Admin = () => {
     setPerspectiveWeighting("");
   };
 
-  return (
-    <div className="min-h-screen bg-background">
-      <nav className="w-full px-6 py-4 bg-white/80 backdrop-blur-lg border-b border-gray-100">
-        <div className="container mx-auto flex justify-between items-center">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Button>
-          <div className="text-xl font-semibold text-blue-600">Planet 09 AI Admin</div>
-          <Button 
-            onClick={() => setShowEventForm(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Plus className="h-4 w-4" />
-            Create New Event
-          </Button>
-        </div>
-      </nav>
-
-      <main className="container mx-auto px-6 py-8">
-        <div className="space-y-8">
+  const renderContent = () => {
+    switch (currentView) {
+      case 'users':
+        return (
           <Card className="bg-white">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -244,7 +217,10 @@ const Admin = () => {
               </div>
             </CardContent>
           </Card>
-
+        );
+      
+      case 'events':
+        return (
           <Card className="bg-white">
             <CardHeader>
               <CardTitle>Events Management</CardTitle>
@@ -264,7 +240,13 @@ const Admin = () => {
               </div>
             </CardContent>
           </Card>
+        );
 
+      case 'registrations':
+        return <EventRegistrationsView />;
+
+      case 'submissions':
+        return (
           <Card className="bg-white">
             <CardHeader>
               <CardTitle>Submissions</CardTitle>
@@ -325,6 +307,85 @@ const Admin = () => {
               </div>
             </CardContent>
           </Card>
+        );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <nav className="w-full bg-white/80 backdrop-blur-lg border-b border-gray-100">
+        <div className="container mx-auto">
+          {/* Top Navigation Bar */}
+          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-4">
+              <a href="/" className="text-xl font-semibold text-blue-600">
+                PLANET 09 AI WRITING
+              </a>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate("/dashboard")}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </div>
+          </div>
+          
+          {/* Secondary Navigation */}
+          <div className="flex items-center gap-6 px-6 py-2">
+            <Button
+              variant={currentView === 'users' ? 'default' : 'ghost'}
+              onClick={() => setCurrentView('users')}
+              className="flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              Users
+            </Button>
+            <Button
+              variant={currentView === 'events' ? 'default' : 'ghost'}
+              onClick={() => setCurrentView('events')}
+              className="flex items-center gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              Events
+            </Button>
+            <Button
+              variant={currentView === 'registrations' ? 'default' : 'ghost'}
+              onClick={() => setCurrentView('registrations')}
+              className="flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              Event Registrations
+            </Button>
+            <Button
+              variant={currentView === 'submissions' ? 'default' : 'ghost'}
+              onClick={() => setCurrentView('submissions')}
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Submissions
+            </Button>
+          </div>
+        </div>
+      </nav>
+
+      <main className="container mx-auto px-6 py-8">
+        <div className="space-y-8">
+          {currentView === 'events' && (
+            <div className="flex justify-end mb-6">
+              <Button 
+                onClick={() => setShowEventForm(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Plus className="h-4 w-4" />
+                Create New Event
+              </Button>
+            </div>
+          )}
+          {renderContent()}
         </div>
       </main>
 
