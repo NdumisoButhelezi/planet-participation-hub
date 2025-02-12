@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
@@ -19,6 +20,16 @@ const Admin = () => {
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [currentView, setCurrentView] = useState<'users' | 'events' | 'submissions' | 'registrations'>('users');
+  
+  // Event form state
+  const [perspective, setPerspective] = useState<Perspective>("STEWARDSHIP");
+  const [name, setName] = useState("");
+  const [date, setDate] = useState("");
+  const [targetGroup, setTargetGroup] = useState<("Student" | "Staff")[]>([]);
+  const [objectives, setObjectives] = useState("");
+  const [outcome, setOutcome] = useState("");
+  const [perspectiveWeighting, setPerspectiveWeighting] = useState("");
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
