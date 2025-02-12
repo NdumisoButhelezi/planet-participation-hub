@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
@@ -159,13 +158,6 @@ const Dashboard = () => {
   }
 
   const userPlaylists = PLAYLISTS[user.skillLevel];
-  const userName = user.profile?.fullName || "Learner";
-  const timeOfDay = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "morning";
-    if (hour < 17) return "afternoon";
-    return "evening";
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -174,9 +166,7 @@ const Dashboard = () => {
       <main className="container mx-auto px-6 py-8">
         <div className="space-y-12">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Good {timeOfDay()}, {userName}! 👋
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900">Welcome!</h1>
             <p className="text-gray-600 mt-2">
               Your current skill level: {user.skillLevel.charAt(0).toUpperCase() + user.skillLevel.slice(1)}
             </p>
