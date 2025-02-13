@@ -1,16 +1,15 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, collection, addDoc, updateDoc, getDocs } from "firebase/firestore";
-import { User, PLAYLISTS, Submission } from "@/types/user";
+import { doc, getDoc, collection, addDoc, getDocs } from "firebase/firestore";
+import { User, Submission } from "@/types/user";
 import { Event } from "@/types/events";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import UserAgreementDialog from "@/components/dashboard/UserAgreementDialog";
-import LearningPathCard from "@/components/dashboard/LearningPathCard";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import EventCard from "@/components/events/EventCard";
+import WelcomeSection from "@/components/dashboard/WelcomeSection";
+import LearningPaths from "@/components/dashboard/LearningPaths";
+import EventsSection from "@/components/dashboard/EventsSection";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -158,70 +157,31 @@ const Dashboard = () => {
     );
   }
 
-  const userPlaylists = PLAYLISTS[user.skillLevel];
-  const userName = user.fullName || "Learner";
-  const timeOfDay = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "morning";
-    if (hour < 17) return "afternoon";
-    return "evening";
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <DashboardHeader user={user} />
 
       <main className="container mx-auto px-6 py-8">
         <div className="space-y-12">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Good {timeOfDay()}, {userName}! 👋
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Your current skill level: {user.skillLevel.charAt(0).toUpperCase() + user.skillLevel.slice(1)}
-            </p>
-            {!user.isAdmin && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-600 mb-2">Program Progress</p>
-                <Progress value={user.progress || 0} className="w-full" />
-              </div>
-            )}
-          </div>
+          <WelcomeSection user={user} />
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {userPlaylists.map((playlistUrl, index) => (
-              <LearningPathCard
-                key={index}
-                index={index}
-                playlistUrl={playlistUrl}
-                projectLink={projectLink}
-                socialMediaLink={socialMediaLink}
-                peersEngaged={peersEngaged}
-                learningReflection={learningReflection}
-                onProjectLinkChange={setProjectLink}
-                onSocialMediaLinkChange={setSocialMediaLink}
-                onPeersEngagedChange={setPeersEngaged}
-                onLearningReflectionChange={setLearningReflection}
-                onSubmitReflection={handleSubmitReflection}
-              />
-            ))}
-          </div>
+          <LearningPaths
+            skillLevel={user.skillLevel}
+            projectLink={projectLink}
+            socialMediaLink={socialMediaLink}
+            peersEngaged={peersEngaged}
+            learningReflection={learningReflection}
+            onProjectLinkChange={setProjectLink}
+            onSocialMediaLinkChange={setSocialMediaLink}
+            onPeersEngagedChange={setPeersEngaged}
+            onLearningReflectionChange={setLearningReflection}
+            onSubmitReflection={handleSubmitReflection}
+          />
 
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Upcoming Events</h2>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {events.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  isAdmin={false}
-                  onEdit={() => {}}
-                  onDelete={() => {}}
-                  onRegister={handleRegisterEvent}
-                />
-              ))}
-            </div>
-          </div>
+          <EventsSection 
+            events={events}
+            onRegister={handleRegisterEvent}
+          />
         </div>
       </main>
 
