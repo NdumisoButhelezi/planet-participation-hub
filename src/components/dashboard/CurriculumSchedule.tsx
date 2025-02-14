@@ -2,7 +2,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface WeeklyTask {
   week: number;
@@ -95,56 +104,138 @@ const curriculumData: WeeklyTask[] = [
 ];
 
 const CurriculumSchedule = () => {
-  const navigate = useNavigate();
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [projectLink, setProjectLink] = useState("");
+  const [socialMediaLink, setSocialMediaLink] = useState("");
+  const [peersEngaged, setPeersEngaged] = useState("0");
+  const [learningReflection, setLearningReflection] = useState("");
+  const { toast } = useToast();
+
+  const handleSubmitReflection = () => {
+    if (!learningReflection.trim()) {
+      toast({
+        title: "Error",
+        description: "Please write your reflection before submitting",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Here you can add the submission logic
+    toast({
+      title: "Success",
+      description: `Week ${selectedWeek} reflection submitted successfully!`,
+    });
+
+    // Reset form and close dialog
+    setProjectLink("");
+    setSocialMediaLink("");
+    setPeersEngaged("0");
+    setLearningReflection("");
+    setIsDialogOpen(false);
+  };
 
   return (
-    <Card className="bg-white shadow-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-2xl">
-          <CalendarDays className="h-6 w-6 text-blue-500" />
-          Program Schedule (March - April 2025)
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {curriculumData.map((week) => (
-            <div key={week.week} className="border-l-4 border-blue-500 pl-4 py-2">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold flex items-center justify-between">
-                    <span>Week {week.week}: {week.title}</span>
-                    <span className="text-sm text-gray-500">{week.dates}</span>
-                  </h3>
-                  <ul className="mt-2 space-y-1">
-                    {week.tasks.map((task, index) => (
-                      <li key={index} className="text-gray-600 text-sm">
-                        • {task}
-                      </li>
-                    ))}
-                  </ul>
+    <>
+      <Card className="bg-white shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-2xl">
+            <CalendarDays className="h-6 w-6 text-blue-500" />
+            Program Schedule (March - April 2025)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {curriculumData.map((week) => (
+              <div key={week.week} className="border-l-4 border-blue-500 pl-4 py-2">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold flex items-center justify-between">
+                      <span>Week {week.week}: {week.title}</span>
+                      <span className="text-sm text-gray-500">{week.dates}</span>
+                    </h3>
+                    <ul className="mt-2 space-y-1">
+                      {week.tasks.map((task, index) => (
+                        <li key={index} className="text-gray-600 text-sm">
+                          • {task}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <Button 
+                    variant="outline"
+                    className="ml-4 shrink-0"
+                    onClick={() => {
+                      setSelectedWeek(week.week);
+                      setIsDialogOpen(true);
+                    }}
+                  >
+                    Submit Reflection
+                  </Button>
                 </div>
-                <Button 
-                  variant="outline"
-                  className="ml-4 shrink-0"
-                  onClick={() => navigate(`/admin?week=${week.week}`)}
-                >
-                  View Submissions
-                </Button>
               </div>
+            ))}
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-600 font-medium">
+                Important Deadlines:
+              </p>
+              <ul className="mt-2 text-sm text-gray-600">
+                <li>• Submissions are due every Sunday at 11:59 PM (UTC+2)</li>
+                <li>• Leaderboard updates every Monday</li>
+              </ul>
             </div>
-          ))}
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-600 font-medium">
-              Important Deadlines:
-            </p>
-            <ul className="mt-2 text-sm text-gray-600">
-              <li>• Submissions are due every Sunday at 11:59 PM (UTC+2)</li>
-              <li>• Leaderboard updates every Monday</li>
-            </ul>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Submit Week {selectedWeek} Reflection</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Input
+                placeholder="Project GitHub/Drive Link"
+                value={projectLink}
+                onChange={(e) => setProjectLink(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Input
+                placeholder="Social Media Post Link"
+                value={socialMediaLink}
+                onChange={(e) => setSocialMediaLink(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Input
+                type="number"
+                placeholder="Number of peers engaged with"
+                value={peersEngaged}
+                onChange={(e) => setPeersEngaged(e.target.value)}
+                min="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Textarea
+                placeholder="Write your reflection about what you learned..."
+                value={learningReflection}
+                onChange={(e) => setLearningReflection(e.target.value)}
+                className="min-h-[150px]"
+              />
+            </div>
+            <Button 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              onClick={handleSubmitReflection}
+            >
+              Submit Reflection
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
