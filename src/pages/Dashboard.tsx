@@ -11,6 +11,7 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import WelcomeSection from "@/components/dashboard/WelcomeSection";
 import LearningPaths from "@/components/dashboard/LearningPaths";
 import EventsSection from "@/components/dashboard/EventsSection";
+import CurriculumSchedule from "@/components/dashboard/CurriculumSchedule";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -165,6 +166,8 @@ const Dashboard = () => {
       <main className="container mx-auto px-6 py-8">
         <div className="space-y-12">
           <WelcomeSection user={user} />
+
+          <CurriculumSchedule />
 
           <LearningPaths
             skillLevel={user.skillLevel}
