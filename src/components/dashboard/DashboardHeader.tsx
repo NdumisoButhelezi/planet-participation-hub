@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { User } from "@/types/user";
 import { Button } from "@/components/ui/button";
-import { Brain, UserCircle, Trophy } from "lucide-react";
+import { Brain, UserCircle, Trophy, Coins } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "@/lib/firebase";
 import ProfileDialog from "./ProfileDialog";
@@ -18,13 +18,19 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
   return (
     <nav className="w-full px-6 py-4 bg-white/80 backdrop-blur-lg border-b border-gray-100">
       <div className="container mx-auto flex justify-between items-center">
-        <a 
-          href="/" 
-          className="text-xl font-semibold text-blue-600 hover:opacity-80 transition-opacity flex items-center gap-2"
-        >
-          <Brain className="h-6 w-6" />
-          <span>Planet 09 AI</span>
-        </a>
+        <div className="flex items-center gap-6">
+          <a 
+            href="/" 
+            className="text-xl font-semibold text-blue-600 hover:opacity-80 transition-opacity flex items-center gap-2"
+          >
+            <Brain className="h-6 w-6" />
+            <span>Planet 09 AI</span>
+          </a>
+          <div className="flex items-center gap-2 text-purple-600">
+            <Coins className="h-5 w-5" />
+            <span className="font-medium">{user.points ?? 0} points</span>
+          </div>
+        </div>
         <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 

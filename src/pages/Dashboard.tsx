@@ -102,9 +102,17 @@ const Dashboard = () => {
 
       await addDoc(collection(db, "submissions"), submission);
       
+      // Update user points for submission
+      const newPoints = (user.points ?? 0) + 10; // +10 points for submission
+      await updateDoc(doc(db, "users", user.id), {
+        points: newPoints
+      });
+      
+      setUser({ ...user, points: newPoints });
+      
       toast({
         title: "Success",
-        description: "Your reflection has been submitted for review",
+        description: "Your reflection has been submitted for review (+10 points)",
       });
       
       setProjectLink("");
