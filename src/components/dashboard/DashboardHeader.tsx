@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { User } from "@/types/user";
 import { Button } from "@/components/ui/button";
-import { Brain, UserCircle } from "lucide-react";
+import { Brain, UserCircle, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "@/lib/firebase";
 import ProfileDialog from "./ProfileDialog";
@@ -26,6 +26,14 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
           <span>Planet 09 AI</span>
         </a>
         <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate("/leaderboard")}
+            className="flex items-center gap-2"
+          >
+            <Trophy className="h-4 w-4 text-yellow-500" />
+            Leaderboard
+          </Button>
           {user.isAdmin && (
             <Button 
               variant="outline" 

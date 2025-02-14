@@ -1,6 +1,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface WeeklyTask {
   week: number;
@@ -93,6 +95,8 @@ const curriculumData: WeeklyTask[] = [
 ];
 
 const CurriculumSchedule = () => {
+  const navigate = useNavigate();
+
   return (
     <Card className="bg-white shadow-lg">
       <CardHeader>
@@ -105,17 +109,28 @@ const CurriculumSchedule = () => {
         <div className="space-y-6">
           {curriculumData.map((week) => (
             <div key={week.week} className="border-l-4 border-blue-500 pl-4 py-2">
-              <h3 className="text-lg font-semibold flex items-center justify-between">
-                <span>Week {week.week}: {week.title}</span>
-                <span className="text-sm text-gray-500">{week.dates}</span>
-              </h3>
-              <ul className="mt-2 space-y-1">
-                {week.tasks.map((task, index) => (
-                  <li key={index} className="text-gray-600 text-sm">
-                    • {task}
-                  </li>
-                ))}
-              </ul>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold flex items-center justify-between">
+                    <span>Week {week.week}: {week.title}</span>
+                    <span className="text-sm text-gray-500">{week.dates}</span>
+                  </h3>
+                  <ul className="mt-2 space-y-1">
+                    {week.tasks.map((task, index) => (
+                      <li key={index} className="text-gray-600 text-sm">
+                        • {task}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <Button 
+                  variant="outline"
+                  className="ml-4 shrink-0"
+                  onClick={() => navigate(`/admin?week=${week.week}`)}
+                >
+                  View Submissions
+                </Button>
+              </div>
             </div>
           ))}
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
