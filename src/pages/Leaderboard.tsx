@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { User } from "@/types/user";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -13,23 +13,23 @@ const Leaderboard = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const usersSnapshot = await getDocs(collection(db, "users"));
-        const usersData = usersSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as User));
-        
-        setUsers(usersData);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Set up real-time listener for users collection
+    const q = query(collection(db, "users"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const usersData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as User));
+      
+      setUsers(usersData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching users:", error);
+      setLoading(false);
+    });
 
-    fetchUsers();
+    // Cleanup subscription
+    return () => unsubscribe();
   }, []);
 
   const sortedUsers = users
