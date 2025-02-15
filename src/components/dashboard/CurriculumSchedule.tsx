@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,9 +10,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { auth, db } from "@/lib/firebase";
+import { addDoc, collection, query, where, getDocs, onSnapshot, updateDoc, doc } from "firebase/firestore";
+import { User, Submission } from "@/types/user";
 
 interface WeeklyTask {
   week: number;
@@ -111,29 +114,115 @@ const CurriculumSchedule = () => {
   const [socialMediaLink, setSocialMediaLink] = useState("");
   const [peersEngaged, setPeersEngaged] = useState("0");
   const [learningReflection, setLearningReflection] = useState("");
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  const handleSubmitReflection = () => {
-    if (!learningReflection.trim()) {
+  useEffect(() => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    // Fetch current user data
+    const fetchUser = async () => {
+      const userDoc = await getDocs(query(collection(db, "users"), where("id", "==", userId)));
+      if (!userDoc.empty) {
+        setCurrentUser({ id: userId, ...userDoc.docs[0].data() } as User);
+      }
+    };
+    fetchUser();
+
+    // Set up real-time listener for user's submissions
+    const q = query(collection(db, "submissions"), where("userId", "==", userId));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const submissionsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate()
+      })) as Submission[];
+      setSubmissions(submissionsData);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleSubmitReflection = async () => {
+    if (!learningReflection.trim() || !selectedWeek) {
       toast({
         title: "Error",
-        description: "Please write your reflection before submitting",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Success",
-      description: `Week ${selectedWeek} reflection submitted successfully!`,
-    });
+    try {
+      const userId = auth.currentUser?.uid;
+      if (!userId) throw new Error("Not authenticated");
 
-    setProjectLink("");
-    setSocialMediaLink("");
-    setPeersEngaged("0");
-    setLearningReflection("");
-    setIsDialogOpen(false);
+      // Create new submission
+      await addDoc(collection(db, "submissions"), {
+        userId,
+        taskId: `week-${selectedWeek}`,
+        content: learningReflection,
+        projectLink,
+        socialMediaLink,
+        peersEngaged: parseInt(peersEngaged),
+        status: "pending",
+        createdAt: new Date()
+      });
+
+      toast({
+        title: "Success",
+        description: `Week ${selectedWeek} reflection submitted successfully!`,
+      });
+
+      // Reset form
+      setProjectLink("");
+      setSocialMediaLink("");
+      setPeersEngaged("0");
+      setLearningReflection("");
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error("Error submitting reflection:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit reflection",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getSubmissionStatus = (week: number) => {
+    const submission = submissions.find(s => s.taskId === `week-${week}`);
+    if (!submission) return null;
+    return submission.status;
+  };
+
+  const getStatusColor = (status: string | null) => {
+    switch (status) {
+      case "approved":
+        return "text-green-600";
+      case "rejected":
+        return "text-red-600";
+      case "pending":
+        return "text-yellow-600";
+      default:
+        return "text-gray-400";
+    }
+  };
+
+  const getStatusIcon = (status: string | null) => {
+    switch (status) {
+      case "approved":
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
+      case "rejected":
+        return <XCircle className="h-5 w-5 text-red-600" />;
+      case "pending":
+        return <Clock className="h-5 w-5 text-yellow-600" />;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -147,44 +236,48 @@ const CurriculumSchedule = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {curriculumData.map((week) => (
-              <div key={week.week} className="border-l-4 border-blue-500 pl-4 py-2">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold flex flex-col md:flex-row md:items-center gap-2 mb-2">
-                      <span>Week {week.week}: {week.title}</span>
-                      <span className="text-sm text-gray-500">{week.dates}</span>
-                    </h3>
-                    <ul className="mt-2 space-y-1 text-left list-disc list-inside">
-                      {week.tasks.map((task, index) => (
-                        <li key={index} className="text-gray-600 text-sm pl-0">
-                          {task}
-                        </li>
-                      ))}
-                    </ul>
+            {curriculumData.map((week) => {
+              const status = getSubmissionStatus(week.week);
+              
+              return (
+                <div key={week.week} className="border-l-4 border-blue-500 pl-4 py-2">
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold flex flex-col md:flex-row md:items-center gap-2 mb-2">
+                        <span className="flex items-center gap-2">
+                          Week {week.week}: {week.title}
+                          {getStatusIcon(status)}
+                        </span>
+                        <span className="text-sm text-gray-500">{week.dates}</span>
+                      </h3>
+                      <ul className="mt-2 space-y-1 text-left list-disc list-inside">
+                        {week.tasks.map((task, index) => (
+                          <li key={index} className="text-gray-600 text-sm pl-0">
+                            {task}
+                          </li>
+                        ))}
+                      </ul>
+                      {status && (
+                        <p className={`mt-2 text-sm font-medium ${getStatusColor(status)}`}>
+                          Status: {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </p>
+                      )}
+                    </div>
+                    <Button 
+                      variant="outline"
+                      className="w-full md:w-auto shrink-0"
+                      onClick={() => {
+                        setSelectedWeek(week.week);
+                        setIsDialogOpen(true);
+                      }}
+                      disabled={status === "approved"}
+                    >
+                      {status === "approved" ? "Completed" : "Submit Reflection"}
+                    </Button>
                   </div>
-                  <Button 
-                    variant="outline"
-                    className="w-full md:w-auto shrink-0"
-                    onClick={() => {
-                      setSelectedWeek(week.week);
-                      setIsDialogOpen(true);
-                    }}
-                  >
-                    Submit Reflection
-                  </Button>
                 </div>
-              </div>
-            ))}
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600 font-medium">
-                Important Deadlines:
-              </p>
-              <ul className="mt-2 text-sm text-gray-600 list-disc list-inside">
-                <li>Submissions are due every Sunday at 11:59 PM (UTC+2)</li>
-                <li>Leaderboard updates every Monday</li>
-              </ul>
-            </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

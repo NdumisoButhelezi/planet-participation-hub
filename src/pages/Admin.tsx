@@ -1,8 +1,7 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, where } from "firebase/firestore";
 import { User, Submission } from "@/types/user";
 import { Event, Perspective } from "@/types/events";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,6 +100,28 @@ const Admin = () => {
 
   const handleSubmission = async (submissionId: string, status: "approved" | "rejected") => {
     try {
+      const submission = submissions.find(sub => sub.id === submissionId);
+      if (!submission) return;
+
+      const userRef = doc(db, "users", submission.userId);
+      const userDoc = await getDocs(query(collection(db, "users"), where("id", "==", submission.userId)));
+      const userData = userDoc.docs[0].data() as User;
+      
+      let pointsChange = 0;
+      if (status === "approved") {
+        // +10 for weekly reflection, +30 for approval
+        pointsChange = 40;
+      } else {
+        // -20 for rejection
+        pointsChange = -20;
+      }
+
+      // Update user points
+      await updateDoc(userRef, {
+        points: (userData.points || 0) + pointsChange
+      });
+
+      // Update submission status
       await updateDoc(doc(db, "submissions", submissionId), {
         status
       });
@@ -111,7 +132,7 @@ const Admin = () => {
       
       toast({
         title: "Success",
-        description: `Submission ${status}`,
+        description: `Submission ${status} and points updated`,
       });
     } catch (error) {
       toast({
