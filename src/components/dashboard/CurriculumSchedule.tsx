@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface WeeklyTask {
   week: number;
@@ -111,6 +112,7 @@ const CurriculumSchedule = () => {
   const [peersEngaged, setPeersEngaged] = useState("0");
   const [learningReflection, setLearningReflection] = useState("");
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const handleSubmitReflection = () => {
     if (!learningReflection.trim()) {
@@ -122,13 +124,11 @@ const CurriculumSchedule = () => {
       return;
     }
 
-    // Here you can add the submission logic
     toast({
       title: "Success",
       description: `Week ${selectedWeek} reflection submitted successfully!`,
     });
 
-    // Reset form and close dialog
     setProjectLink("");
     setSocialMediaLink("");
     setPeersEngaged("0");
@@ -140,7 +140,7 @@ const CurriculumSchedule = () => {
     <>
       <Card className="bg-white shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl">
+          <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
             <CalendarDays className="h-6 w-6 text-blue-500" />
             Program Schedule (March - April 2025)
           </CardTitle>
@@ -149,23 +149,23 @@ const CurriculumSchedule = () => {
           <div className="space-y-6">
             {curriculumData.map((week) => (
               <div key={week.week} className="border-l-4 border-blue-500 pl-4 py-2">
-                <div className="flex items-start justify-between">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold flex items-center justify-between">
+                    <h3 className="text-lg font-semibold flex flex-col md:flex-row md:items-center gap-2 mb-2">
                       <span>Week {week.week}: {week.title}</span>
                       <span className="text-sm text-gray-500">{week.dates}</span>
                     </h3>
-                    <ul className="mt-2 space-y-1">
+                    <ul className="mt-2 space-y-1 text-left list-disc list-inside">
                       {week.tasks.map((task, index) => (
-                        <li key={index} className="text-gray-600 text-sm">
-                          • {task}
+                        <li key={index} className="text-gray-600 text-sm pl-0">
+                          {task}
                         </li>
                       ))}
                     </ul>
                   </div>
                   <Button 
                     variant="outline"
-                    className="ml-4 shrink-0"
+                    className="w-full md:w-auto shrink-0"
                     onClick={() => {
                       setSelectedWeek(week.week);
                       setIsDialogOpen(true);
@@ -180,9 +180,9 @@ const CurriculumSchedule = () => {
               <p className="text-sm text-gray-600 font-medium">
                 Important Deadlines:
               </p>
-              <ul className="mt-2 text-sm text-gray-600">
-                <li>• Submissions are due every Sunday at 11:59 PM (UTC+2)</li>
-                <li>• Leaderboard updates every Monday</li>
+              <ul className="mt-2 text-sm text-gray-600 list-disc list-inside">
+                <li>Submissions are due every Sunday at 11:59 PM (UTC+2)</li>
+                <li>Leaderboard updates every Monday</li>
               </ul>
             </div>
           </div>
@@ -190,7 +190,7 @@ const CurriculumSchedule = () => {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className={`${isMobile ? 'w-[95vw]' : 'sm:max-w-[500px]'} p-4 md:p-6`}>
           <DialogHeader>
             <DialogTitle>Submit Week {selectedWeek} Reflection</DialogTitle>
           </DialogHeader>
@@ -200,6 +200,7 @@ const CurriculumSchedule = () => {
                 placeholder="Project GitHub/Drive Link"
                 value={projectLink}
                 onChange={(e) => setProjectLink(e.target.value)}
+                className="w-full"
               />
             </div>
             <div className="space-y-2">
@@ -207,6 +208,7 @@ const CurriculumSchedule = () => {
                 placeholder="Social Media Post Link"
                 value={socialMediaLink}
                 onChange={(e) => setSocialMediaLink(e.target.value)}
+                className="w-full"
               />
             </div>
             <div className="space-y-2">
@@ -216,6 +218,7 @@ const CurriculumSchedule = () => {
                 value={peersEngaged}
                 onChange={(e) => setPeersEngaged(e.target.value)}
                 min="0"
+                className="w-full"
               />
             </div>
             <div className="space-y-2">
@@ -223,7 +226,7 @@ const CurriculumSchedule = () => {
                 placeholder="Write your reflection about what you learned..."
                 value={learningReflection}
                 onChange={(e) => setLearningReflection(e.target.value)}
-                className="min-h-[150px]"
+                className="min-h-[150px] w-full"
               />
             </div>
             <Button 
