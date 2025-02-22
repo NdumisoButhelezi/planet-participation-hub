@@ -1,7 +1,8 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, onSnapshot } from "firebase/firestore";
 import { User, Submission } from "@/types/user";
 import { Event, Perspective } from "@/types/events";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import EventRegistrationsView from "@/components/admin/EventRegistrationsView";
 import UsersManagement from "@/components/admin/UsersManagement";
 import SubmissionsManagement from "@/components/admin/SubmissionsManagement";
 import AdminNavigation from "@/components/admin/AdminNavigation";
+import { useToast } from "@/hooks/use-toast";
 
 const Admin = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -20,6 +22,7 @@ const Admin = () => {
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [currentView, setCurrentView] = useState<'users' | 'events' | 'submissions' | 'registrations'>('users');
+  const [isLoading, setIsLoading] = useState(true);
   
   const [perspective, setPerspective] = useState<Perspective>("STEWARDSHIP");
   const [name, setName] = useState("");
@@ -30,49 +33,62 @@ const Admin = () => {
   const [perspectiveWeighting, setPerspectiveWeighting] = useState("");
 
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
-    const checkAdmin = async () => {
-      const user = auth.currentUser;
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) {
         navigate("/login");
         return;
       }
 
-      const userDoc = await getDocs(collection(db, "users"));
-      const currentUserData = userDoc.docs.find(doc => doc.id === user.uid);
-      
-      if (!currentUserData?.data()?.isAdmin) {
-        navigate("/dashboard");
-        return;
-      }
-
-      const usersSnapshot = await getDocs(collection(db, "users"));
-      const submissionsSnapshot = await getDocs(collection(db, "submissions"));
-      
-      setUsers(usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
-      setSubmissions(submissionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission)));
-    };
-
-    checkAdmin();
-  }, [navigate]);
-
-  useEffect(() => {
-    const fetchEvents = async () => {
       try {
-        const eventsSnapshot = await getDocs(collection(db, "events"));
-        const eventsData = eventsSnapshot.docs.map(doc => ({ 
-          id: doc.id, 
-          ...doc.data() 
-        })) as Event[];
-        setEvents(eventsData);
-      } catch (error) {
-        console.error("Error fetching events:", error);
-      }
-    };
+        const userDoc = await getDocs(query(collection(db, "users"), where("id", "==", user.uid)));
+        const currentUserData = userDoc.docs[0]?.data();
+        
+        if (!currentUserData?.isAdmin) {
+          toast({
+            title: "Access Denied",
+            description: "You don't have permission to access the admin panel",
+            variant: "destructive",
+          });
+          navigate("/dashboard");
+          return;
+        }
 
-    fetchEvents();
-  }, []);
+        // Set up real-time listeners for users and submissions
+        const usersUnsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+          setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
+        });
+
+        const submissionsUnsubscribe = onSnapshot(collection(db, "submissions"), (snapshot) => {
+          setSubmissions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission)));
+        });
+
+        const eventsUnsubscribe = onSnapshot(collection(db, "events"), (snapshot) => {
+          setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
+        });
+
+        setIsLoading(false);
+
+        return () => {
+          usersUnsubscribe();
+          submissionsUnsubscribe();
+          eventsUnsubscribe();
+        };
+      } catch (error) {
+        console.error("Error checking admin status:", error);
+        toast({
+          title: "Error",
+          description: "Failed to verify admin access",
+          variant: "destructive",
+        });
+        navigate("/dashboard");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate, toast]);
 
   const resetEventForm = () => {
     setSelectedEvent(null);
@@ -86,6 +102,10 @@ const Admin = () => {
   };
 
   const renderContent = () => {
+    if (isLoading) {
+      return <div className="text-center py-8">Loading...</div>;
+    }
+
     switch (currentView) {
       case 'users':
         return <UsersManagement users={users} onUserUpdate={setUsers} />;

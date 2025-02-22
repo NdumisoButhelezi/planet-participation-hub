@@ -1,12 +1,13 @@
 
 import { useState } from "react";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Brain } from "lucide-react";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -24,18 +25,20 @@ const Login = () => {
       const user = userCredential.user;
 
       if (user) {
-        // Get the ID token
-        const token = await user.getIdToken();
+        // Check if user is admin
+        const userDoc = await getDocs(query(collection(db, "users"), where("id", "==", user.uid)));
+        const userData = userDoc.docs[0]?.data();
         
-        // Verify the token is valid
-        if (token) {
-          toast({
-            title: "Welcome back!",
-            description: "Successfully logged in.",
-          });
-          navigate("/dashboard");
+        toast({
+          title: "Welcome back!",
+          description: "Successfully logged in.",
+        });
+
+        // Redirect based on user role
+        if (userData?.isAdmin) {
+          navigate("/admin");
         } else {
-          throw new Error("Failed to get valid authentication token");
+          navigate("/dashboard");
         }
       }
     } catch (error) {
