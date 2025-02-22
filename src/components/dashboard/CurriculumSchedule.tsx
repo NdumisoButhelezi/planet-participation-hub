@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -123,7 +122,6 @@ const CurriculumSchedule = () => {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
 
-    // Fetch current user data
     const fetchUser = async () => {
       const userDoc = await getDocs(query(collection(db, "users"), where("id", "==", userId)));
       if (!userDoc.empty) {
@@ -132,7 +130,6 @@ const CurriculumSchedule = () => {
     };
     fetchUser();
 
-    // Set up real-time listener for user's submissions
     const q = query(collection(db, "submissions"), where("userId", "==", userId));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const submissionsData = snapshot.docs.map(doc => ({
@@ -160,7 +157,14 @@ const CurriculumSchedule = () => {
       const userId = auth.currentUser?.uid;
       if (!userId) throw new Error("Not authenticated");
 
-      // Create new submission
+      const userRef = doc(db, "users", userId);
+      const userDoc = await getDocs(query(collection(db, "users"), where("id", "==", userId)));
+      const userData = userDoc.docs[0].data() as User;
+
+      await updateDoc(userRef, {
+        points: (userData.points || 0) + 10
+      });
+
       await addDoc(collection(db, "submissions"), {
         userId,
         taskId: `week-${selectedWeek}`,
@@ -169,15 +173,15 @@ const CurriculumSchedule = () => {
         socialMediaLink,
         peersEngaged: parseInt(peersEngaged),
         status: "pending",
-        createdAt: new Date()
+        createdAt: new Date(),
+        learningReflection
       });
 
       toast({
         title: "Success",
-        description: `Week ${selectedWeek} reflection submitted successfully!`,
+        description: `Week ${selectedWeek} reflection submitted successfully! (+10 points)`,
       });
 
-      // Reset form
       setProjectLink("");
       setSocialMediaLink("");
       setPeersEngaged("0");

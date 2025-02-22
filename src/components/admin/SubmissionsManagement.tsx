@@ -1,4 +1,3 @@
-
 import { User, Submission } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,9 +26,9 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
       
       let pointsChange = 0;
       if (status === "approved") {
-        pointsChange = 40;
+        pointsChange = 30;
       } else {
-        pointsChange = -20;
+        pointsChange = -30;
       }
 
       await updateDoc(userRef, {
@@ -47,7 +46,7 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
       
       toast({
         title: "Success",
-        description: `Submission ${status} and points updated`,
+        description: `Submission ${status} and points updated (${pointsChange > 0 ? '+' : ''}${pointsChange} points)`,
       });
     } catch (error) {
       toast({

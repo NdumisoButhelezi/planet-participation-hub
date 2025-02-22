@@ -1,10 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { User, Submission } from "@/types/user";
-import { Event } from "@/types/events";
+import { Event, Perspective } from "@/types/events";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus } from "lucide-react";
 import EventForm from "@/components/events/EventForm";
@@ -22,7 +21,6 @@ const Admin = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [currentView, setCurrentView] = useState<'users' | 'events' | 'submissions' | 'registrations'>('users');
   
-  // Event form state
   const [perspective, setPerspective] = useState<Perspective>("STEWARDSHIP");
   const [name, setName] = useState("");
   const [date, setDate] = useState("");
@@ -182,7 +180,7 @@ const Admin = () => {
         open={showEventForm}
         onOpenChange={setShowEventForm}
         selectedEvent={selectedEvent}
-        onSubmit={() => {}}
+        onSubmit={async () => {}}
         perspective={perspective}
         setPerspective={setPerspective}
         name={name}
