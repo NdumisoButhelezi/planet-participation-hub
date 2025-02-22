@@ -22,33 +22,50 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [skillLevel, setSkillLevel] = useState<SkillLevel>("beginner");
   const [adminKey, setAdminKey] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      const isAdmin = adminKey === "planet09admin"; // Simple admin key check
+      const isAdmin = adminKey === "planet09admin";
       
+      // Create user document with correct id field
       await setDoc(doc(db, "users", userCredential.user.uid), {
+        id: userCredential.user.uid, // Add this line to include the id field
         email,
         skillLevel,
         isAdmin,
+        hasAcceptedAgreement: false,
+        progress: 0,
+        points: 0,
       });
 
       toast({
         title: "Account created",
         description: "Welcome to Planet 09 AI!",
       });
-      navigate("/dashboard");
+
+      // Redirect based on admin status
+      if (isAdmin) {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error) {
+      console.error("Registration error:", error);
       toast({
         title: "Error",
         description: "Failed to create account. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -74,6 +91,7 @@ const Register = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2"
               required
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
@@ -84,12 +102,14 @@ const Register = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2"
               required
+              disabled={isLoading}
             />
           </div>
           <div className="space-y-2">
             <Select
               value={skillLevel}
               onValueChange={(value) => setSkillLevel(value as SkillLevel)}
+              disabled={isLoading}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select your skill level" />
@@ -108,10 +128,15 @@ const Register = () => {
               value={adminKey}
               onChange={(e) => setAdminKey(e.target.value)}
               className="w-full px-4 py-2"
+              disabled={isLoading}
             />
           </div>
-          <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
-            Create Account
+          <Button 
+            type="submit" 
+            className="w-full bg-blue-600 hover:bg-blue-700"
+            disabled={isLoading}
+          >
+            {isLoading ? "Creating Account..." : "Create Account"}
           </Button>
         </form>
         <div className="text-center text-sm space-y-2">
