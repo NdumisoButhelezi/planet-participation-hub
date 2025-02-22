@@ -6,7 +6,7 @@ import { collection, getDocs, query, where, onSnapshot } from "firebase/firestor
 import { User, Submission } from "@/types/user";
 import { Event, Perspective } from "@/types/events";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, Shield } from "lucide-react";
 import EventForm from "@/components/events/EventForm";
 import EventCard from "@/components/events/EventCard";
 import EventRegistrationsView from "@/components/admin/EventRegistrationsView";
@@ -23,6 +23,7 @@ const Admin = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [currentView, setCurrentView] = useState<'users' | 'events' | 'submissions' | 'registrations'>('users');
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   
   const [perspective, setPerspective] = useState<Perspective>("STEWARDSHIP");
   const [name, setName] = useState("");
@@ -38,52 +39,62 @@ const Admin = () => {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) {
+        setIsLoading(false);
+        setIsAdmin(false);
         navigate("/login");
         return;
       }
 
       try {
+        // Check admin status
         const userDoc = await getDocs(query(collection(db, "users"), where("id", "==", user.uid)));
         const currentUserData = userDoc.docs[0]?.data();
-        
-        if (!currentUserData?.isAdmin) {
-          toast({
-            title: "Access Denied",
-            description: "You don't have permission to access the admin panel",
-            variant: "destructive",
+        setIsAdmin(!!currentUserData?.isAdmin);
+
+        if (currentUserData?.isAdmin) {
+          // Set up real-time listeners only if user is admin
+          const usersUnsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+            const usersData = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as User[];
+            setUsers(usersData);
           });
-          navigate("/dashboard");
-          return;
+
+          const submissionsUnsubscribe = onSnapshot(collection(db, "submissions"), (snapshot) => {
+            const submissionsData = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as Submission[];
+            setSubmissions(submissionsData);
+          });
+
+          const eventsUnsubscribe = onSnapshot(collection(db, "events"), (snapshot) => {
+            const eventsData = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            })) as Event[];
+            setEvents(eventsData);
+          });
+
+          setIsLoading(false);
+
+          return () => {
+            usersUnsubscribe();
+            submissionsUnsubscribe();
+            eventsUnsubscribe();
+          };
         }
-
-        // Set up real-time listeners for users and submissions
-        const usersUnsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
-          setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
-        });
-
-        const submissionsUnsubscribe = onSnapshot(collection(db, "submissions"), (snapshot) => {
-          setSubmissions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Submission)));
-        });
-
-        const eventsUnsubscribe = onSnapshot(collection(db, "events"), (snapshot) => {
-          setEvents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event)));
-        });
-
-        setIsLoading(false);
-
-        return () => {
-          usersUnsubscribe();
-          submissionsUnsubscribe();
-          eventsUnsubscribe();
-        };
       } catch (error) {
         console.error("Error checking admin status:", error);
+        setIsAdmin(false);
         toast({
           title: "Error",
           description: "Failed to verify admin access",
           variant: "destructive",
         });
-        navigate("/dashboard");
+      } finally {
+        setIsLoading(false);
       }
     });
 
@@ -101,65 +112,35 @@ const Admin = () => {
     setPerspectiveWeighting("");
   };
 
-  const renderContent = () => {
-    if (isLoading) {
-      return <div className="text-center py-8">Loading...</div>;
-    }
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
-    switch (currentView) {
-      case 'users':
-        return <UsersManagement users={users} onUserUpdate={setUsers} />;
-      
-      case 'events':
-        return (
-          <div className="space-y-6">
-            <div className="flex justify-end mb-6">
-              <Button 
-                onClick={() => setShowEventForm(true)}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Plus className="h-4 w-4" />
-                Create New Event
-              </Button>
-            </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {events.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  isAdmin={true}
-                  onEdit={() => {
-                    setSelectedEvent(event);
-                    setPerspective(event.perspective);
-                    setName(event.name);
-                    setDate(event.date);
-                    setTargetGroup(event.targetGroup);
-                    setObjectives(event.objectives);
-                    setOutcome(event.outcome);
-                    setPerspectiveWeighting(event.perspectiveWeighting.toString());
-                    setShowEventForm(true);
-                  }}
-                  onDelete={() => {}}
-                  onRegister={() => {}}
-                />
-              ))}
-            </div>
-          </div>
-        );
-
-      case 'registrations':
-        return <EventRegistrationsView />;
-
-      case 'submissions':
-        return (
-          <SubmissionsManagement 
-            submissions={submissions} 
-            users={users} 
-            onSubmissionUpdate={setSubmissions}
-          />
-        );
-    }
-  };
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-md mx-auto p-8">
+          <Shield className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Access Denied</h1>
+          <p className="text-gray-600 mb-6">You don't have permission to access the admin panel.</p>
+          <Button 
+            onClick={() => navigate("/dashboard")}
+            className="flex items-center gap-2 mx-auto"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Return to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
