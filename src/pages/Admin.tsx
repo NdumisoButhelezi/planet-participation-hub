@@ -112,6 +112,66 @@ const Admin = () => {
     setPerspectiveWeighting("");
   };
 
+  // Add the renderContent function here before it's used
+  const renderContent = () => {
+    switch (currentView) {
+      case 'users':
+        return <UsersManagement users={users} onUserUpdate={setUsers} />;
+      
+      case 'events':
+        return (
+          <div className="space-y-6">
+            <div className="flex justify-end mb-6">
+              <Button 
+                onClick={() => setShowEventForm(true)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Plus className="h-4 w-4" />
+                Create New Event
+              </Button>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {events.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  isAdmin={true}
+                  onEdit={() => {
+                    setSelectedEvent(event);
+                    setPerspective(event.perspective);
+                    setName(event.name);
+                    setDate(event.date);
+                    setTargetGroup(event.targetGroup);
+                    setObjectives(event.objectives);
+                    setOutcome(event.outcome);
+                    setPerspectiveWeighting(event.perspectiveWeighting.toString());
+                    setShowEventForm(true);
+                  }}
+                  onDelete={() => {}}
+                  onRegister={() => {}}
+                />
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'submissions':
+        return (
+          <SubmissionsManagement 
+            submissions={submissions} 
+            users={users} 
+            onSubmissionUpdate={setSubmissions}
+          />
+        );
+
+      case 'registrations':
+        return <EventRegistrationsView />;
+
+      default:
+        return <div>Select a view</div>;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
