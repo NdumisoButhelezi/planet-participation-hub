@@ -17,6 +17,12 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [showAgreement, setShowAgreement] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
+  // Add new state for form fields
+  const [projectLink, setProjectLink] = useState("");
+  const [socialMediaLink, setSocialMediaLink] = useState("");
+  const [peersEngaged, setPeersEngaged] = useState("");
+  const [learningReflection, setLearningReflection] = useState("");
+  
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -82,10 +88,10 @@ const Dashboard = () => {
         userId: user.id,
         taskId: playlistUrl,
         content: "",
-        projectLink: "",
-        socialMediaLink: "",
-        learningReflection: "",
-        peersEngaged: 0,
+        projectLink,
+        socialMediaLink,
+        learningReflection,
+        peersEngaged: Number(peersEngaged),
         status: "pending"
       };
 
@@ -101,6 +107,12 @@ const Dashboard = () => {
       });
 
       setUser(prev => prev ? { ...prev, points: (prev.points || 0) + points } : null);
+
+      // Reset form fields after successful submission
+      setProjectLink("");
+      setSocialMediaLink("");
+      setPeersEngaged("");
+      setLearningReflection("");
 
       toast({
         title: "Success",
@@ -163,6 +175,14 @@ const Dashboard = () => {
 
           <LearningPaths
             skillLevel={user.skillLevel}
+            projectLink={projectLink}
+            socialMediaLink={socialMediaLink}
+            peersEngaged={peersEngaged}
+            learningReflection={learningReflection}
+            onProjectLinkChange={setProjectLink}
+            onSocialMediaLinkChange={setSocialMediaLink}
+            onPeersEngagedChange={setPeersEngaged}
+            onLearningReflectionChange={setLearningReflection}
             onSubmitReflection={handleSubmitReflection}
           />
 
