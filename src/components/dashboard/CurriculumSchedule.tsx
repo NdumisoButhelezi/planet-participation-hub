@@ -27,10 +27,10 @@ const curriculumData: WeeklyTask[] = [
   {
     week: 1,
     dates: "March 3 - March 9",
-    title: "GitHub & LinkedIn Setup",
+    title: "GitHub & Vite Setup",
     tasks: [
       "Set up GitHub & LinkedIn profiles",
-      "Clone repo template and install dependencies",
+      "Learn Vite basics (https://vite.dev/)",
       "Basic introduction to HTML, CSS, JS/TS with Vite"
     ]
   },

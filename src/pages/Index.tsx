@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import ProgramAgreementDialog from "@/components/shared/ProgramAgreementDialog";
-import { Brain, Trophy, Users, Calendar, ArrowRight, Github, Linkedin, Globe, MessageSquare, Rocket, Award, Network, Timer } from "lucide-react";
+import { Brain, Trophy, Users, Calendar, ArrowRight, Github, Linkedin, Globe, MessageSquare, Rocket, Award, Timer } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -11,14 +11,14 @@ const Index = () => {
 
   const features = [
     {
+      icon: <Trophy className="w-8 h-8 text-yellow-600" />,
+      title: "Competitive Learning",
+      description: "Earn points and climb the leaderboard while mastering AI concepts"
+    },
+    {
       icon: <Rocket className="w-8 h-8 text-blue-600" />,
       title: "AI Projects",
       description: "Build real-world AI applications with hands-on guidance"
-    },
-    {
-      icon: <Trophy className="w-8 h-8 text-purple-600" />,
-      title: "Learn & Earn",
-      description: "Earn rewards while mastering AI concepts"
     },
     {
       icon: <Users className="w-8 h-8 text-green-600" />,
@@ -26,17 +26,17 @@ const Index = () => {
       description: "Join a thriving community of AI enthusiasts"
     },
     {
-      icon: <Award className="w-8 h-8 text-orange-600" />,
-      title: "Certification",
-      description: "Get certified in cutting-edge AI technologies"
+      icon: <Timer className="w-8 h-8 text-purple-600" />,
+      title: "Weekly Challenges",
+      description: "Regular assignments to keep you engaged and learning"
     }
   ];
 
   const stats = [
     { number: "500+", label: "Active Users" },
     { number: "100+", label: "AI Projects" },
-    { number: "50+", label: "Workshops" },
-    { number: "1000+", label: "Community Posts" }
+    { number: "50+", label: "Weekly Winners" },
+    { number: "1000+", label: "Points Awarded" }
   ];
 
   return (
@@ -69,17 +69,17 @@ const Index = () => {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-5xl font-bold leading-tight mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 text-transparent bg-clip-text">
-                Level Up Your AI Skills with Planet 09
+                Learn AI & Compete on Planet 09
               </h1>
               <p className="text-xl text-gray-600 mb-8">
-                Join our community to access curated learning paths, hands-on projects, and expert guidance tailored to your skill level.
+                Join our gamified learning platform where you can earn points, climb the leaderboard, and master AI development while competing with peers.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
                   onClick={() => navigate("/register")}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-full flex items-center justify-center"
                 >
-                  Start Learning <ArrowRight className="ml-2 w-5 h-5" />
+                  Start Competing <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
                 <Button 
                   variant="outline"
@@ -92,8 +92,8 @@ const Index = () => {
             </div>
             <div className="relative hidden md:block">
               <img
-                src="https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=800&q=80"
-                alt="AI Learning"
+                src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b"
+                alt="AI Learning Platform"
                 className="rounded-2xl shadow-2xl"
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent rounded-2xl"></div>
