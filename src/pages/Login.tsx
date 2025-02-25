@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Brain } from "lucide-react";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import { User } from "@/types/user";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -25,20 +26,31 @@ const Login = () => {
       const user = userCredential.user;
 
       if (user) {
-        // Check if user is admin
-        const userDoc = await getDocs(query(collection(db, "users"), where("id", "==", user.uid)));
-        const userData = userDoc.docs[0]?.data();
+        // Check if user exists in Firestore and get their role
+        const userQuery = query(collection(db, "users"), where("id", "==", user.uid));
+        const userSnapshot = await getDocs(userQuery);
         
-        toast({
-          title: "Welcome back!",
-          description: "Successfully logged in.",
-        });
+        if (!userSnapshot.empty) {
+          const userData = userSnapshot.docs[0].data() as User;
+          
+          toast({
+            title: "Welcome back!",
+            description: "Successfully logged in.",
+          });
 
-        // Redirect based on user role
-        if (userData?.isAdmin) {
-          navigate("/admin");
+          // Redirect based on user role
+          if (userData.isAdmin) {
+            navigate("/admin");
+          } else {
+            navigate("/dashboard");
+          }
         } else {
-          navigate("/dashboard");
+          // If no user document exists, create one with default values
+          toast({
+            title: "Error",
+            description: "User account not properly set up. Please contact support.",
+            variant: "destructive",
+          });
         }
       }
     } catch (error) {
