@@ -174,17 +174,26 @@ const Index = () => {
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-4">Newsletter</h3>
-              <div className="flex">
+              <h3 className="text-lg font-semibold mb-4">Need Help?</h3>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                // Add form submission logic here
+              }} className="space-y-4">
                 <input
                   type="email"
-                  placeholder="Enter your email"
-                  className="bg-gray-800 text-white px-4 py-2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                  placeholder="Your email"
+                  className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 />
-                <Button className="rounded-l-none bg-blue-600 hover:bg-blue-700">
-                  Subscribe
+                <textarea
+                  placeholder="How can we help you with software development?"
+                  className="w-full bg-gray-800 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+                  required
+                />
+                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
+                  Send Message
                 </Button>
-              </div>
+              </form>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
