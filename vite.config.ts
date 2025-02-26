@@ -11,12 +11,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' && componentTagger({
-      // Enable new features with latest configuration
-      enableDebugMode: true,
-      enableHotReload: true,
-      enableTypeChecking: true
-    }),
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
