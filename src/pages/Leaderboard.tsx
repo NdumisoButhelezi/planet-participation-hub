@@ -1,16 +1,21 @@
 
 import { useEffect, useState } from "react";
 import { collection, getDocs, onSnapshot, query } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { User } from "@/types/user";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy, Award, Medal } from "lucide-react";
+import { Trophy, Award, Medal, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const Leaderboard = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Set up real-time listener for users collection
@@ -23,14 +28,27 @@ const Leaderboard = () => {
       
       setUsers(usersData);
       setLoading(false);
+      
+      // Set current user
+      const currentUserId = auth.currentUser?.uid;
+      if (currentUserId) {
+        const currentUserData = usersData.find(user => user.id === currentUserId);
+        if (currentUserData) {
+          setCurrentUser(currentUserData);
+        }
+      }
     }, (error) => {
       console.error("Error fetching users:", error);
       setLoading(false);
+      toast({
+        title: "Error",
+        description: "Failed to load leaderboard data",
+        variant: "destructive",
+      });
     });
 
-    // Cleanup subscription
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
   const sortedUsers = users
     .filter(user => (user.points ?? 0) > 0)
@@ -42,6 +60,17 @@ const Leaderboard = () => {
       
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </div>
+
           <Card className="bg-white shadow-lg">
             <CardHeader className="border-b border-gray-100">
               <CardTitle className="text-2xl font-bold flex items-center gap-3">

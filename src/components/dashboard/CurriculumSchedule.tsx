@@ -21,6 +21,7 @@ interface WeeklyTask {
   dates: string;
   title: string;
   tasks: string[];
+  videoUrl?: string;
 }
 
 const curriculumData: WeeklyTask[] = [
@@ -32,7 +33,8 @@ const curriculumData: WeeklyTask[] = [
       "Set up GitHub & LinkedIn profiles",
       "Learn Vite basics (https://vite.dev/)",
       "Basic introduction to HTML, CSS, JS/TS with Vite"
-    ]
+    ],
+    videoUrl: "https://www.youtube.com/embed/L-Wfo-J5lso?si=Lu0h7bhZenlimP9E"
   },
   {
     week: 2,
@@ -254,6 +256,20 @@ const CurriculumSchedule = () => {
                         </span>
                         <span className="text-sm text-gray-500">{week.dates}</span>
                       </h3>
+                      {week.videoUrl && (
+                        <div className="mt-4 mb-4">
+                          <div className="relative pt-[56.25%] w-full rounded-lg overflow-hidden bg-gray-100">
+                            <iframe
+                              src={week.videoUrl}
+                              className="absolute top-0 left-0 w-full h-full"
+                              title={`Week ${week.week} Content`}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowFullScreen
+                              referrerPolicy="strict-origin-when-cross-origin"
+                            />
+                          </div>
+                        </div>
+                      )}
                       <ul className="mt-2 space-y-1 text-left list-disc list-inside">
                         {week.tasks.map((task, index) => (
                           <li key={index} className="text-gray-600 text-sm pl-0">
