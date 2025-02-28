@@ -18,11 +18,12 @@ interface ShareEventPopoverProps {
 const ShareEventPopover = ({ eventId, eventName, eventDate, eventObjectives }: ShareEventPopoverProps) => {
   const { toast } = useToast();
   
-  // Use the specified Planet Participation Hub URL
-  const baseUrl = "https://planet-participation-hub.lovable.app";
-  const shareUrl = `${baseUrl}/events?id=${eventId}`;
+  // Hardcode the specific URL provided by the user
+  const shareUrl = "https://planet-participation-hub.lovable.app/events?id=LdA29tBgCZcNoCsnkO38";
+  
+  // Format the message consistently for all platforms
   const shareTitle = eventName;
-  const shareText = `Join us for ${eventName} on ${eventDate}. Objectives: ${eventObjectives}`;
+  const shareText = `${eventName}\nJoin us for ${eventName} on ${eventDate}. Objectives: ${eventObjectives}.\nPlease create an account first to register.\n${shareUrl}`;
 
   const shareToFacebook = () => {
     const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
@@ -40,25 +41,24 @@ const ShareEventPopover = ({ eventId, eventName, eventDate, eventObjectives }: S
   };
 
   const shareToWhatsapp = () => {
-    const text = `${shareTitle}\n${shareText}\n${shareUrl}`;
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    // Use the same message format for WhatsApp
+    const url = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
     window.open(url, '_blank');
   };
 
   const shareToInstagram = () => {
     // Instagram doesn't have a direct sharing API, so we'll copy the link and notify the user
-    const textToCopy = `${shareTitle}\n${shareText}\n${shareUrl}`;
-    navigator.clipboard.writeText(textToCopy)
+    navigator.clipboard.writeText(shareText)
       .then(() => {
         toast({
-          title: "Link copied to clipboard",
+          title: "Message copied to clipboard",
           description: "Open Instagram and paste in your story or direct message.",
         });
       })
       .catch(() => {
         toast({
           title: "Couldn't copy to clipboard",
-          description: "Please copy this link manually: " + shareUrl,
+          description: "Please copy this message manually:\n" + shareText,
           variant: "destructive",
         });
       });
