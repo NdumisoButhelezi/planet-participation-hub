@@ -24,8 +24,9 @@ const EventCard = ({ event, isAdmin, onEdit, onDelete, onRegister }: EventCardPr
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const { toast } = useToast();
 
-  // Ensure we have a valid URL by constructing it properly
-  const shareUrl = `${window.location.origin}/events?id=${event.id}`;
+  // Use the specified Planet Participation Hub URL
+  const baseUrl = "https://planet-participation-hub.lovable.app";
+  const shareUrl = `${baseUrl}/events?id=${event.id}`;
   const shareTitle = event.name;
   const shareText = `Join us for ${event.name} on ${event.date}. Objectives: ${event.objectives}`;
 
