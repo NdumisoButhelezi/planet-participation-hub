@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useToast } from "@/hooks/use-toast";
 
 interface EventCardProps {
   event: Event;
@@ -21,31 +22,51 @@ interface EventCardProps {
 
 const EventCard = ({ event, isAdmin, onEdit, onDelete, onRegister }: EventCardProps) => {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const { toast } = useToast();
 
-  const shareUrl = window.location.origin + "/events?id=" + event.id;
+  // Ensure we have a valid URL by constructing it properly
+  const shareUrl = `${window.location.origin}/events?id=${event.id}`;
   const shareTitle = event.name;
   const shareText = `Join us for ${event.name} on ${event.date}. Objectives: ${event.objectives}`;
 
   const shareToFacebook = () => {
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`, '_blank');
+    const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
+    window.open(url, '_blank', 'width=600,height=400');
   };
 
   const shareToTwitter = () => {
-    window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`, '_blank');
+    const url = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+    window.open(url, '_blank', 'width=600,height=400');
   };
 
   const shareToLinkedin = () => {
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(shareTitle)}&summary=${encodeURIComponent(shareText)}`, '_blank');
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(shareTitle)}&summary=${encodeURIComponent(shareText)}`;
+    window.open(url, '_blank', 'width=600,height=400');
   };
 
   const shareToWhatsapp = () => {
-    window.open(`https://wa.me/?text=${encodeURIComponent(shareTitle + "\n" + shareText + "\n" + shareUrl)}`, '_blank');
+    const text = `${shareTitle}\n${shareText}\n${shareUrl}`;
+    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
   };
 
   const shareToInstagram = () => {
     // Instagram doesn't have a direct sharing API, so we'll copy the link and notify the user
-    navigator.clipboard.writeText(shareUrl);
-    alert('Link copied to clipboard. Open Instagram and paste in your story or direct message.');
+    const textToCopy = `${shareTitle}\n${shareText}\n${shareUrl}`;
+    navigator.clipboard.writeText(textToCopy)
+      .then(() => {
+        toast({
+          title: "Link copied to clipboard",
+          description: "Open Instagram and paste in your story or direct message.",
+        });
+      })
+      .catch(() => {
+        toast({
+          title: "Couldn't copy to clipboard",
+          description: "Please copy this link manually: " + shareUrl,
+          variant: "destructive",
+        });
+      });
   };
 
   return (
