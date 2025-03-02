@@ -1,12 +1,12 @@
 
 import { Button } from "@/components/ui/button";
-import { Share2, Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
-import { 
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
+import { Facebook, Instagram, Link2, Twitter, Share2, Linkedin, Send } from "lucide-react";
 
 interface ShareEventPopoverProps {
   eventId: string;
@@ -18,8 +18,8 @@ interface ShareEventPopoverProps {
 const ShareEventPopover = ({ eventId, eventName, eventDate, eventObjectives }: ShareEventPopoverProps) => {
   const { toast } = useToast();
   
-  // Hardcode the specific URL provided by the user
-  const shareUrl = "https://planet-participation-hub.lovable.app/events?id=LdA29tBgCZcNoCsnkO38";
+  // Hardcode the specific URL as requested
+  const shareUrl = "https://planet-participation-hub.lovable.app";
   
   // Format the message consistently for all platforms
   const shareTitle = eventName;

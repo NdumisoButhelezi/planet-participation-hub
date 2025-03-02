@@ -33,12 +33,31 @@
   }
 }
 
-.card {
-  padding: 2em;
+/* Custom animations */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 
-.read-the-docs {
-  color: #888;
+.float-animation {
+  animation: float 5s ease-in-out infinite;
+}
+
+/* Gradient text */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-500;
+}
+
+/* Glass card effect */
+.glass-card {
+  @apply bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg;
 }
 
 /* Mobile responsiveness */
@@ -53,5 +72,13 @@
   
   .card {
     padding: 1em;
+  }
+  
+  h1 {
+    font-size: 2.5rem !important;
+  }
+  
+  h2 {
+    font-size: 2rem !important;
   }
 }

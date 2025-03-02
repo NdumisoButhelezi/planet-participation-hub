@@ -8,9 +8,18 @@ import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Leaderboard from "./pages/Leaderboard";
 import { Toaster } from "@/components/ui/toaster";
+import { useEffect } from "react";
 import "./App.css";
 
 function App() {
+  // Force scrollbar to be present to prevent layout shifts
+  useEffect(() => {
+    document.body.classList.add('overflow-y-scroll');
+    return () => {
+      document.body.classList.remove('overflow-y-scroll');
+    };
+  }, []);
+
   return (
     <Router>
       <Routes>
