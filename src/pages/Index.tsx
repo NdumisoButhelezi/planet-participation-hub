@@ -8,7 +8,8 @@ import ProgramAgreementDialog from "@/components/shared/ProgramAgreementDialog";
 import { 
   Brain, Trophy, Users, Calendar, ArrowRight, Github, 
   Linkedin, Globe, MessageSquare, Rocket, Award, 
-  Timer, CheckCircle, BarChart, Code, Star, Database
+  Timer, CheckCircle, BarChart, Code, Star, Database,
+  Send
 } from "lucide-react";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
