@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Brain } from "lucide-react";
+import { Brain, AlertTriangle, XCircle, Mail, Key, Loader2 } from "lucide-react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { User } from "@/types/user";
 
@@ -14,12 +14,15 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [shake, setShake] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -53,11 +56,38 @@ const Login = () => {
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
+      setShake(true);
+      setTimeout(() => setShake(false), 820);
+      
+      // Provide more specific error messages
+      switch(error.code) {
+        case 'auth/invalid-email':
+          setError('Invalid email format. Please check your email address.');
+          break;
+        case 'auth/user-disabled':
+          setError('This account has been disabled. Please contact support.');
+          break;
+        case 'auth/user-not-found':
+          setError('No account found with this email. Did you mean to sign up?');
+          break;
+        case 'auth/wrong-password':
+          setError('Incorrect password. Please check your password and try again.');
+          break;
+        case 'auth/too-many-requests':
+          setError('Too many failed login attempts. Please try again later or reset your password.');
+          break;
+        case 'auth/network-request-failed':
+          setError('Network error. Please check your internet connection and try again.');
+          break;
+        default:
+          setError('Login failed. Please try again later.');
+      }
+      
       toast({
-        title: "Error",
-        description: "Invalid email or password.",
+        title: "Login Error",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -67,7 +97,9 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg backdrop-blur-lg border border-gray-100">
+      <div className={`w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg backdrop-blur-lg border border-gray-100 transition-all ${shake ? 'animate-[shake_0.82s_cubic-bezier(.36,.07,.19,.97)_both]' : ''}`}
+        style={{ transformOrigin: '50% 50%' }}
+      >
         <div className="text-center">
           <a href="/" className="inline-flex items-center gap-2 mb-6 hover:opacity-80 transition-opacity">
             <Brain className="h-8 w-8 text-blue-600" />
@@ -78,35 +110,66 @@ const Login = () => {
           <h1 className="text-3xl font-semibold tracking-tight">Welcome Back</h1>
           <p className="text-gray-500">Enter your credentials to access your account</p>
         </div>
+        
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded animate-fade-in">
+            <div className="flex items-start">
+              <AlertTriangle className="h-5 w-5 text-red-500 mr-3 mt-0.5 animate-pulse" />
+              <div>
+                <p className="text-sm font-medium text-red-800">{error}</p>
+              </div>
+              <button 
+                onClick={() => setError(null)} 
+                className="ml-auto -mr-1 text-red-500 hover:text-red-700 transition-colors"
+              >
+                <XCircle className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        )}
+        
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2"
-              required
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10"
+                required
+                disabled={isLoading}
+              />
+            </div>
           </div>
           <div className="space-y-2">
-            <Input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2"
-              required
-              disabled={isLoading}
-            />
+            <div className="relative">
+              <Key className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-10"
+                required
+                disabled={isLoading}
+              />
+            </div>
           </div>
           <Button 
             type="submit" 
-            className="w-full"
+            className="w-full relative"
             disabled={isLoading}
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
+            )}
           </Button>
         </form>
         <div className="text-center text-sm space-y-2">
