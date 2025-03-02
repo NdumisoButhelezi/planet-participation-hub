@@ -73,10 +73,10 @@ const Register = () => {
       setShake(true);
       setTimeout(() => setShake(false), 820);
       
-      // Provide more specific error messages
+      // Provide more specific error messages in English
       switch(error.code) {
         case 'auth/email-already-in-use':
-          setError('This email is already registered. Try logging in instead.');
+          setError('This email is already registered. Please try logging in instead.');
           break;
         case 'auth/invalid-email':
           setError('Invalid email format. Please enter a valid email address.');
@@ -85,18 +85,18 @@ const Register = () => {
           setError('Registration is currently disabled. Please try again later.');
           break;
         case 'auth/weak-password':
-          setError('Password is too weak. Use at least 6 characters with numbers and special characters.');
+          setError('Password is too weak. Please use at least 6 characters with numbers and special characters.');
           break;
         case 'auth/network-request-failed':
           setError('Network error. Please check your internet connection and try again.');
           break;
         default:
-          setError('Registration failed. Please try again later.');
+          setError('Registration failed: ' + (error.message || 'Unknown error occurred. Please try again.'));
       }
       
       toast({
         title: "Registration Error",
-        description: error.message,
+        description: error.message || "Failed to create account. Please try again.",
         variant: "destructive",
       });
     } finally {

@@ -61,7 +61,7 @@ const Login = () => {
       setShake(true);
       setTimeout(() => setShake(false), 820);
       
-      // Provide more specific error messages
+      // Provide more specific error messages in English
       switch(error.code) {
         case 'auth/invalid-email':
           setError('Invalid email format. Please check your email address.');
@@ -70,10 +70,13 @@ const Login = () => {
           setError('This account has been disabled. Please contact support.');
           break;
         case 'auth/user-not-found':
-          setError('No account found with this email. Did you mean to sign up?');
+          setError('No account found with this email. Please check your email or sign up for a new account.');
           break;
         case 'auth/wrong-password':
           setError('Incorrect password. Please check your password and try again.');
+          break;
+        case 'auth/invalid-credential':
+          setError('Invalid login credentials. Please check your email and password.');
           break;
         case 'auth/too-many-requests':
           setError('Too many failed login attempts. Please try again later or reset your password.');
@@ -82,12 +85,12 @@ const Login = () => {
           setError('Network error. Please check your internet connection and try again.');
           break;
         default:
-          setError('Login failed. Please try again later.');
+          setError('Login failed: ' + (error.message || 'Unknown error occurred. Please try again.'));
       }
       
       toast({
         title: "Login Error",
-        description: error.message,
+        description: error.message || "Failed to log in. Please try again.",
         variant: "destructive",
       });
     } finally {
