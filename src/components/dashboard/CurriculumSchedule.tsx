@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, CheckCircle, XCircle, Clock } from "lucide-react";
+import { CalendarDays, CheckCircle, XCircle, Clock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -119,6 +119,7 @@ const CurriculumSchedule = () => {
   const [learningReflection, setLearningReflection] = useState("");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [showVideoMap, setShowVideoMap] = useState<Record<number, boolean>>({});
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -146,6 +147,13 @@ const CurriculumSchedule = () => {
 
     return () => unsubscribe();
   }, []);
+
+  const toggleVideoPreview = (weekNum: number) => {
+    setShowVideoMap(prev => ({
+      ...prev,
+      [weekNum]: !prev[weekNum]
+    }));
+  };
 
   const handleSubmitReflection = async () => {
     if (!learningReflection.trim() || !selectedWeek) {
@@ -265,21 +273,38 @@ const CurriculumSchedule = () => {
                           </li>
                         ))}
                       </ul>
+                      
                       {week.videoUrl && (
-                        <div className="mt-6">
-                          <h4 className="text-blue-600 font-medium mb-3">{week.videoTitle}</h4>
-                          <div className="relative pt-[56.25%] w-full rounded-lg overflow-hidden bg-gray-100">
-                            <iframe
-                              src={week.videoUrl}
-                              className="absolute top-0 left-0 w-full h-full"
-                              title={week.videoTitle}
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                              allowFullScreen
-                              referrerPolicy="strict-origin-when-cross-origin"
-                            />
+                        <>
+                          <div className="mt-4">
+                            <Button 
+                              variant="outline" 
+                              className="w-full md:w-auto flex items-center justify-center gap-2 mb-3"
+                              onClick={() => toggleVideoPreview(week.week)}
+                            >
+                              {showVideoMap[week.week] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              {showVideoMap[week.week] ? "Hide Video" : "Show Video"}
+                            </Button>
+                            
+                            {showVideoMap[week.week] && (
+                              <div className="mt-2">
+                                <h4 className="text-blue-600 font-medium mb-3">{week.videoTitle}</h4>
+                                <div className="relative pt-[56.25%] w-full rounded-lg overflow-hidden bg-gray-100 animate-fade-in">
+                                  <iframe
+                                    src={week.videoUrl}
+                                    className="absolute top-0 left-0 w-full h-full"
+                                    title={week.videoTitle}
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                    referrerPolicy="strict-origin-when-cross-origin"
+                                  />
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
+                        </>
                       )}
+                      
                       {status && (
                         <p className={`mt-2 text-sm font-medium ${getStatusColor(status)}`}>
                           Status: {status.charAt(0).toUpperCase() + status.slice(1)}
