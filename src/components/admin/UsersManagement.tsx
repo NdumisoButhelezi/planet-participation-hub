@@ -1,14 +1,15 @@
 
 import { useState, useEffect } from "react";
 import { User, SkillLevel } from "@/types/user";
-import { Shield, Trash2, Search, Filter } from "lucide-react";
+import { Shield, Trash2, Search, Filter, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 
 interface UsersManagementProps {
   users: User[];
@@ -27,6 +28,7 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
   const [selectedSkillLevel, setSelectedSkillLevel] = useState<SkillLevel | "all">("all");
   const [selectedRole, setSelectedRole] = useState<"all" | "admin" | "user">("all");
   const [selectedYearOfStudy, setSelectedYearOfStudy] = useState<string>("all");
+  const [showLockedAccounts, setShowLockedAccounts] = useState<boolean>(false);
 
   const uniqueYearsOfStudy = [...new Set(users
     .filter(user => user.yearOfStudy)
@@ -67,8 +69,13 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
       filtered = filtered.filter(user => user.yearOfStudy === selectedYearOfStudy);
     }
     
+    // Apply locked accounts filter
+    if (showLockedAccounts) {
+      filtered = filtered.filter(user => user.accountLocked);
+    }
+    
     setFilteredUsers(filtered);
-  }, [searchQuery, users, selectedSkillLevel, selectedRole, selectedYearOfStudy]);
+  }, [searchQuery, users, selectedSkillLevel, selectedRole, selectedYearOfStudy, showLockedAccounts]);
 
   const makeAdmin = async (userId: string) => {
     try {
@@ -89,6 +96,32 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
       toast({
         title: "Error",
         description: "Failed to update user role",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleLockAccount = async (user: User) => {
+    try {
+      const newLockedStatus = !user.accountLocked;
+      await updateDoc(doc(db, "users", user.id), {
+        accountLocked: newLockedStatus,
+        lockReason: newLockedStatus ? "App version incompatibility" : null
+      });
+      
+      const updatedUsers = users.map(u => 
+        u.id === user.id ? { ...u, accountLocked: newLockedStatus, lockReason: newLockedStatus ? "App version incompatibility" : null } : u
+      );
+      onUserUpdate(updatedUsers);
+      
+      toast({
+        title: newLockedStatus ? "Account Locked" : "Account Unlocked",
+        description: `User account has been ${newLockedStatus ? "locked" : "unlocked"}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update account status",
         variant: "destructive",
       });
     }
@@ -137,6 +170,7 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
     setSelectedSkillLevel("all");
     setSelectedRole("all");
     setSelectedYearOfStudy("all");
+    setShowLockedAccounts(false);
   };
 
   return (
@@ -208,7 +242,19 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
               </select>
             </div>
             
-            <div className="flex items-end">
+            <div className="flex flex-col justify-end gap-2">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="locked-accounts"
+                  checked={showLockedAccounts}
+                  onChange={(e) => setShowLockedAccounts(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 mr-2"
+                />
+                <label htmlFor="locked-accounts" className="text-sm font-medium text-gray-700">
+                  Show locked accounts
+                </label>
+              </div>
               <Button
                 variant="outline"
                 onClick={resetFilters}
@@ -233,9 +279,20 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
             
             <div className="space-y-4">
               {filteredUsers.map(user => (
-                <div key={user.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div 
+                  key={user.id} 
+                  className={`flex items-center justify-between p-4 rounded-lg ${user.accountLocked ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}
+                >
                   <div>
-                    <p className="font-medium">{user.email}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{user.email}</p>
+                      {user.accountLocked && (
+                        <Badge variant="destructive" className="flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          Locked
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-600">
                       {user.skillLevel} • {user.isAdmin ? "Admin" : "User"}
                     </p>
@@ -251,8 +308,20 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                     {user.yearOfStudy && (
                       <p className="text-xs text-gray-500">Year: {user.yearOfStudy}</p>
                     )}
+                    {user.accountLocked && user.lockReason && (
+                      <p className="text-xs text-red-600 mt-1">
+                        <strong>Lock reason:</strong> {user.lockReason}
+                      </p>
+                    )}
                   </div>
                   <div className="flex gap-2">
+                    <Button 
+                      variant={user.accountLocked ? "default" : "outline"}
+                      onClick={() => toggleLockAccount(user)}
+                      className="flex items-center gap-2"
+                    >
+                      {user.accountLocked ? "Unlock Account" : "Lock Account"}
+                    </Button>
                     {!user.isAdmin && (
                       <Button 
                         variant="outline"
