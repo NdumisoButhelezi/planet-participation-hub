@@ -1,9 +1,10 @@
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Play, CheckCircle, ArrowRight } from "lucide-react";
+import { Play, CheckCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
 
 interface LearningPathCardProps {
   index: number;
@@ -32,6 +33,12 @@ const LearningPathCard = ({
   onLearningReflectionChange,
   onSubmitReflection,
 }: LearningPathCardProps) => {
+  const [showVideo, setShowVideo] = useState(false);
+
+  const toggleVideoPreview = () => {
+    setShowVideo(prev => !prev);
+  };
+
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
       <CardHeader className="space-y-1">
@@ -40,15 +47,26 @@ const LearningPathCard = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-          <iframe
-            src={`${playlistUrl.replace('playlist?list=', 'embed/videoseries?list=')}`}
-            title={`Learning Path ${index + 1}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full"
-          />
-        </div>
+        <Button 
+          variant="outline" 
+          className="w-full flex items-center justify-center gap-2"
+          onClick={toggleVideoPreview}
+        >
+          {showVideo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {showVideo ? "Hide Video Preview" : "Show Video Preview"}
+        </Button>
+
+        {showVideo && (
+          <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden animate-fade-in">
+            <iframe
+              src={`${playlistUrl.replace('playlist?list=', 'embed/videoseries?list=')}`}
+              title={`Learning Path ${index + 1}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        )}
         
         <div className="flex items-center space-x-2 text-blue-600">
           <Play className="h-5 w-5" />
