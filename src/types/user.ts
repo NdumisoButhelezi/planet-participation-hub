@@ -1,4 +1,3 @@
-
 export type SkillLevel = "beginner" | "intermediate" | "advanced";
 
 export interface User {
@@ -19,6 +18,8 @@ export interface User {
   githubProfile?: string;
   learningStyle?: "solo" | "teamwork" | "both";
   motivation?: string;
+  accountLocked?: boolean;
+  lockReason?: string;
 }
 
 export interface Submission {
