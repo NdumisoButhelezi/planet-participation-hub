@@ -46,7 +46,9 @@ const curriculumData: WeeklyTask[] = [
       "Create a simple homepage layout",
       "Understand HTML structure & semantic elements",
       "Add a basic navigation bar & footer"
-    ]
+    ],
+    videoUrl: "https://www.youtube.com/embed/bQK22OcurIg",
+    videoTitle: "Week 2: Creating Basic Portfolio Structure"
   },
   {
     week: 3,
