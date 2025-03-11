@@ -58,7 +58,9 @@ const curriculumData: WeeklyTask[] = [
       "Learn CSS fundamentals (Flexbox, Grid)",
       "Create responsive layouts",
       "Use CSS animations & transitions"
-    ]
+    ],
+    videoUrl: "https://www.youtube.com/embed/qVJMXio9smI",
+    videoTitle: "Week 3: Styling with CSS"
   },
   {
     week: 4,
@@ -386,3 +388,4 @@ const CurriculumSchedule = () => {
 };
 
 export default CurriculumSchedule;
+

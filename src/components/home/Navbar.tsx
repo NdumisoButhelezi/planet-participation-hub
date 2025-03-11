@@ -17,6 +17,9 @@ const Navbar = () => {
             </span>
           </div>
           <div className="flex items-center space-x-4">
+            <Button variant="ghost" onClick={() => navigate("/about")} className="text-gray-600 hover:text-indigo-600">
+              About Us
+            </Button>
             <Button variant="ghost" onClick={() => navigate("/login")} className="text-gray-600 hover:text-indigo-600">
               Sign In
             </Button>

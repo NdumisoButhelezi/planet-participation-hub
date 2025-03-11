@@ -11,7 +11,13 @@ const HeroSection = ({ onShowAgreement }: HeroSectionProps) => {
   const navigate = useNavigate();
 
   return (
-    <section className="pt-32 pb-20 px-4 bg-gradient-to-br from-indigo-600 to-purple-900 text-white">
+    <section 
+      className="pt-32 pb-20 px-4 text-white relative"
+      style={{
+        background: "linear-gradient(rgba(67, 56, 202, 0.85), rgba(79, 70, 229, 0.85)), url('https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=2000&q=80') no-repeat center center",
+        backgroundSize: "cover"
+      }}
+    >
       <div className="container mx-auto">
         <div className="max-w-3xl mx-auto text-center" data-aos="fade-up">
           <h1 className="text-5xl font-bold leading-tight mb-6 text-white">

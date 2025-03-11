@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Brain, AlertTriangle, XCircle, Mail, Key, Loader2 } from "lucide-react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, setDoc, doc } from "firebase/firestore";
 import { User } from "@/types/user";
 
 const Login = () => {
@@ -49,11 +49,22 @@ const Login = () => {
           }
         } else {
           // If no user document exists, create one with default values
-          toast({
-            title: "Error",
-            description: "User account not properly set up. Please contact support.",
-            variant: "destructive",
+          await setDoc(doc(db, "users", user.uid), {
+            id: user.uid,
+            email: user.email,
+            skillLevel: "beginner",
+            isAdmin: false,
+            hasAcceptedAgreement: false,
+            progress: 0,
+            points: 0,
           });
+          
+          toast({
+            title: "Welcome!",
+            description: "Your account has been set up.",
+          });
+          
+          navigate("/dashboard");
         }
       }
     } catch (error: any) {

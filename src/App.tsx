@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import Leaderboard from "./pages/Leaderboard";
+import About from "./pages/About";
 import { Toaster } from "@/components/ui/toaster";
 import { useEffect } from "react";
 import "./App.css";
@@ -29,6 +30,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/about" element={<About />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
