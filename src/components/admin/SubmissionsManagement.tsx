@@ -1,9 +1,8 @@
-
 import { User, Submission } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Play, List } from "lucide-react";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { CheckCircle, XCircle, Play, List, Trash2 } from "lucide-react";
+import { doc, updateDoc, getDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,7 +26,6 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
         throw new Error("Submission not found");
       }
 
-      // Get the user document directly using doc reference
       const userRef = doc(db, "users", submission.userId);
       const userDoc = await getDoc(userRef);
       
@@ -37,7 +35,6 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
 
       const userData = userDoc.data() as User;
       
-      // Calculate points based on submission type and status
       let pointsChange = 0;
       if (status === "approved") {
         pointsChange = submission.taskId.includes("playlist") ? 30 : 50;
@@ -45,18 +42,15 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
         pointsChange = submission.taskId.includes("playlist") ? -30 : -50;
       }
 
-      // Update user points
       await updateDoc(userRef, {
         points: (userData.points || 0) + pointsChange
       });
 
-      // Update submission status
       const submissionRef = doc(db, "submissions", submissionId);
       await updateDoc(submissionRef, {
         status
       });
       
-      // Update local state
       const updatedSubmissions = submissions.map(sub => 
         sub.id === submissionId ? { ...sub, status } : sub
       );
@@ -71,6 +65,28 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
       toast({
         title: "Error",
         description: "Failed to update submission",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteSubmission = async (submissionId: string) => {
+    try {
+      const submissionRef = doc(db, "submissions", submissionId);
+      await deleteDoc(submissionRef);
+      
+      const updatedSubmissions = submissions.filter(sub => sub.id !== submissionId);
+      onSubmissionUpdate(updatedSubmissions);
+      
+      toast({
+        title: "Success",
+        description: "Submission deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting submission:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete submission",
         variant: "destructive",
       });
     }
@@ -99,13 +115,23 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
               Peers Engaged: {submission.peersEngaged}
             </p>
           </div>
-          <span className={`px-2 py-1 rounded text-sm ${
-            submission.status === "approved" ? "bg-green-100 text-green-800" :
-            submission.status === "rejected" ? "bg-red-100 text-red-800" :
-            "bg-yellow-100 text-yellow-800"
-          }`}>
-            {submission.status}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-1 rounded text-sm ${
+              submission.status === "approved" ? "bg-green-100 text-green-800" :
+              submission.status === "rejected" ? "bg-red-100 text-red-800" :
+              "bg-yellow-100 text-yellow-800"
+            }`}>
+              {submission.status}
+            </span>
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleDeleteSubmission(submission.id)}
+              className="hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4 text-red-600" />
+            </Button>
+          </div>
         </div>
         
         <div className="bg-white p-4 rounded border border-gray-200">
