@@ -9,20 +9,27 @@ interface EventsSectionProps {
 
 const EventsSection = ({ events, onRegister }: EventsSectionProps) => {
   return (
-    <div>
+    <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Upcoming Events</h2>
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {events.map((event) => (
-          <EventCard
-            key={event.id}
-            event={event}
-            isAdmin={false}
-            onEdit={() => {}}
-            onDelete={() => {}}
-            onRegister={onRegister}
-          />
-        ))}
-      </div>
+      
+      {events.length === 0 ? (
+        <div className="p-8 text-center">
+          <p className="text-gray-500">No upcoming events at the moment.</p>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {events.map((event) => (
+            <EventCard
+              key={event.id}
+              event={event}
+              isAdmin={false}
+              onEdit={() => {}}
+              onDelete={() => {}}
+              onRegister={onRegister}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

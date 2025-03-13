@@ -12,12 +12,15 @@ import WelcomeSection from "@/components/dashboard/WelcomeSection";
 import LearningPaths from "@/components/dashboard/LearningPaths";
 import EventsSection from "@/components/dashboard/EventsSection";
 import CurriculumSchedule from "@/components/dashboard/CurriculumSchedule";
+import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [showAgreement, setShowAgreement] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
-  // Add new state for form fields
+  const [activeSection, setActiveSection] = useState("weekly-program");
+  
+  // Add form field states
   const [projectLink, setProjectLink] = useState("");
   const [socialMediaLink, setSocialMediaLink] = useState("");
   const [peersEngaged, setPeersEngaged] = useState("");
@@ -163,16 +166,12 @@ const Dashboard = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <DashboardHeader user={user} />
-
-      <main className="container mx-auto px-6 py-8">
-        <div className="space-y-12">
-          <WelcomeSection user={user} />
-
-          <CurriculumSchedule />
-
+  const renderActiveSection = () => {
+    switch (activeSection) {
+      case "weekly-program":
+        return <CurriculumSchedule />;
+      case "learning-paths":
+        return (
           <LearningPaths
             skillLevel={user.skillLevel}
             projectLink={projectLink}
@@ -185,7 +184,9 @@ const Dashboard = () => {
             onLearningReflectionChange={setLearningReflection}
             onSubmitReflection={handleSubmitReflection}
           />
-
+        );
+      case "events":
+        return (
           <EventsSection 
             events={events}
             onRegister={async () => {
@@ -195,6 +196,28 @@ const Dashboard = () => {
               });
             }}
           />
+        );
+      default:
+        return <CurriculumSchedule />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+      <DashboardHeader user={user} />
+
+      <main className="container mx-auto px-6 py-8">
+        <WelcomeSection user={user} />
+        
+        <div className="flex flex-col md:flex-row mt-8 space-y-6 md:space-y-0 md:gap-6">
+          <DashboardSidebar 
+            activeSection={activeSection} 
+            onChangeSection={setActiveSection} 
+          />
+          
+          <div className="flex-1 transition-all duration-300 animate-fade-in">
+            {renderActiveSection()}
+          </div>
         </div>
       </main>
 

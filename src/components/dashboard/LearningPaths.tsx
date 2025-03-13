@@ -30,23 +30,26 @@ const LearningPaths = ({
   const userPlaylists = PLAYLISTS[skillLevel];
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {userPlaylists.map((playlistUrl, index) => (
-        <LearningPathCard
-          key={index}
-          index={index}
-          playlistUrl={playlistUrl}
-          projectLink={projectLink}
-          socialMediaLink={socialMediaLink}
-          peersEngaged={peersEngaged}
-          learningReflection={learningReflection}
-          onProjectLinkChange={onProjectLinkChange}
-          onSocialMediaLinkChange={onSocialMediaLinkChange}
-          onPeersEngagedChange={onPeersEngagedChange}
-          onLearningReflectionChange={onLearningReflectionChange}
-          onSubmitReflection={onSubmitReflection}
-        />
-      ))}
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Learning Paths</h2>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {userPlaylists.map((playlistUrl, index) => (
+          <LearningPathCard
+            key={index}
+            index={index}
+            playlistUrl={playlistUrl}
+            projectLink={projectLink}
+            socialMediaLink={socialMediaLink}
+            peersEngaged={peersEngaged}
+            learningReflection={learningReflection}
+            onProjectLinkChange={onProjectLinkChange}
+            onSocialMediaLinkChange={onSocialMediaLinkChange}
+            onPeersEngagedChange={onPeersEngagedChange}
+            onLearningReflectionChange={onLearningReflectionChange}
+            onSubmitReflection={onSubmitReflection}
+          />
+        ))}
+      </div>
     </div>
   );
 };

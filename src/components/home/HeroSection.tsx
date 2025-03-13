@@ -36,7 +36,7 @@ const HeroSection = ({ onShowAgreement }: HeroSectionProps) => {
             <Button 
               variant="outline"
               onClick={onShowAgreement}
-              className="border-white text-white hover:bg-white/10 px-8 py-6 rounded-full transition-all shadow-md"
+              className="border-2 border-white text-white bg-indigo-800/30 hover:bg-white/20 px-8 py-6 rounded-full transition-all shadow-md"
             >
               Learn More
             </Button>
