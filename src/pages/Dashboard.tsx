@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
@@ -22,12 +21,11 @@ const Dashboard = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [activeSection, setActiveSection] = useState("weekly-program");
   
-  // Add form field states
   const [projectLink, setProjectLink] = useState("");
   const [socialMediaLink, setSocialMediaLink] = useState("");
   const [peersEngaged, setPeersEngaged] = useState("");
   const [learningReflection, setLearningReflection] = useState("");
-  
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -43,7 +41,6 @@ const Dashboard = () => {
         if (userDoc.exists()) {
           const userData = { id: userDoc.id, ...userDoc.data() } as User;
           
-          // If no registrationDate, update it to now
           if (!userData.registrationDate) {
             const registrationDate = new Date();
             await updateDoc(doc(db, "users", userData.id), {
@@ -51,7 +48,6 @@ const Dashboard = () => {
             });
             userData.registrationDate = registrationDate;
           } else if (userData.registrationDate instanceof Timestamp) {
-            // Convert Firebase Timestamp to Date if needed
             userData.registrationDate = userData.registrationDate.toDate();
           }
           
@@ -109,7 +105,6 @@ const Dashboard = () => {
     if (!user) return;
 
     try {
-      // Create the submission
       const submission: Omit<Submission, "id" | "createdAt"> = {
         userId: user.id,
         taskId: playlistUrl,
@@ -126,7 +121,6 @@ const Dashboard = () => {
         createdAt: new Date()
       });
 
-      // Update user points
       const points = playlistUrl.includes("playlist") ? 30 : 50;
       await updateDoc(doc(db, "users", user.id), {
         points: (user.points || 0) + points
@@ -134,7 +128,6 @@ const Dashboard = () => {
 
       setUser(prev => prev ? { ...prev, points: (prev.points || 0) + points } : null);
 
-      // Reset form fields after successful submission
       setProjectLink("");
       setSocialMediaLink("");
       setPeersEngaged("");
@@ -145,7 +138,6 @@ const Dashboard = () => {
         description: `Submission successful! (+${points} points)`,
       });
 
-      // Refresh leaderboard data
       const leaderboardQuery = query(collection(db, "users"), where("points", ">", 0));
       await getDocs(leaderboardQuery);
 
@@ -189,7 +181,6 @@ const Dashboard = () => {
     );
   }
 
-  // Calculate user's program schedule based on registration date
   const programSchedule = user.registrationDate 
     ? calculateProgramSchedule(user.registrationDate) 
     : null;
@@ -197,7 +188,7 @@ const Dashboard = () => {
   const renderActiveSection = () => {
     switch (activeSection) {
       case "weekly-program":
-        return <CurriculumSchedule />;
+        return <CurriculumSchedule programSchedule={programSchedule} />;
       case "learning-paths":
         return (
           <LearningPaths
@@ -226,7 +217,7 @@ const Dashboard = () => {
           />
         );
       default:
-        return <CurriculumSchedule />;
+        return <CurriculumSchedule programSchedule={programSchedule} />;
     }
   };
 

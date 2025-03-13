@@ -15,10 +15,11 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { auth, db } from "@/lib/firebase";
 import { addDoc, collection, query, where, getDocs, onSnapshot, updateDoc, doc } from "firebase/firestore";
 import { User, Submission } from "@/types/user";
+import { WeeklySchedule, formatDate } from "@/utils/dateUtils";
+import { addDays, format } from "date-fns";
 
 interface WeeklyTask {
   week: number;
-  dates: string;
   title: string;
   tasks: string[];
   videoUrl?: string;
@@ -28,7 +29,6 @@ interface WeeklyTask {
 const curriculumData: WeeklyTask[] = [
   {
     week: 1,
-    dates: "March 3 - March 9",
     title: "GitHub & Vite Setup",
     tasks: [
       "Set up GitHub & LinkedIn profiles",
@@ -40,7 +40,6 @@ const curriculumData: WeeklyTask[] = [
   },
   {
     week: 2,
-    dates: "March 10 - March 16",
     title: "Basic Portfolio Structure",
     tasks: [
       "Create a simple homepage layout",
@@ -52,7 +51,6 @@ const curriculumData: WeeklyTask[] = [
   },
   {
     week: 3,
-    dates: "March 17 - March 23",
     title: "Styling with CSS",
     tasks: [
       "Learn CSS fundamentals (Flexbox, Grid)",
@@ -64,7 +62,6 @@ const curriculumData: WeeklyTask[] = [
   },
   {
     week: 4,
-    dates: "March 24 - March 30",
     title: "JavaScript Interactivity",
     tasks: [
       "Add dynamic content with JavaScript",
@@ -74,7 +71,6 @@ const curriculumData: WeeklyTask[] = [
   },
   {
     week: 5,
-    dates: "March 31 - April 6",
     title: "Advanced Portfolio Features",
     tasks: [
       "Integrate contact form with Firebase",
@@ -84,7 +80,6 @@ const curriculumData: WeeklyTask[] = [
   },
   {
     week: 6,
-    dates: "April 7 - April 13",
     title: "Project Showcase",
     tasks: [
       "Display past projects & skills",
@@ -94,7 +89,6 @@ const curriculumData: WeeklyTask[] = [
   },
   {
     week: 7,
-    dates: "April 14 - April 20",
     title: "Deployment & Optimization",
     tasks: [
       "Host the site on Vercel/Netlify",
@@ -104,7 +98,6 @@ const curriculumData: WeeklyTask[] = [
   },
   {
     week: 8,
-    dates: "April 21 - April 27",
     title: "Final Submission & Reflection",
     tasks: [
       "Submit final portfolio link",
@@ -114,7 +107,11 @@ const curriculumData: WeeklyTask[] = [
   }
 ];
 
-const CurriculumSchedule = () => {
+interface CurriculumScheduleProps {
+  programSchedule?: WeeklySchedule | null;
+}
+
+const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [projectLink, setProjectLink] = useState("");
@@ -245,19 +242,47 @@ const CurriculumSchedule = () => {
     }
   };
 
+  const getWeekDateRange = (week: number) => {
+    if (!programSchedule) return "";
+    
+    const weekStart = addDays(programSchedule.startDate, (week - 1) * 7);
+    const weekEnd = addDays(weekStart, 6);
+    
+    return `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d, yyyy")}`;
+  };
+
+  const getCardTitle = () => {
+    if (!programSchedule) return "Program Schedule";
+    
+    const startMonth = format(programSchedule.startDate, "MMMM");
+    const endMonth = format(programSchedule.endDate, "MMMM");
+    const startYear = format(programSchedule.startDate, "yyyy");
+    const endYear = format(programSchedule.endDate, "yyyy");
+    
+    if (startYear === endYear) {
+      if (startMonth === endMonth) {
+        return `Program Schedule (${startMonth} ${startYear})`;
+      }
+      return `Program Schedule (${startMonth} - ${endMonth} ${startYear})`;
+    }
+    
+    return `Program Schedule (${startMonth} ${startYear} - ${endMonth} ${endYear})`;
+  };
+
   return (
     <>
       <Card className="bg-white shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
             <CalendarDays className="h-6 w-6 text-blue-500" />
-            Program Schedule (March - April 2025)
+            {getCardTitle()}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
             {curriculumData.map((week) => {
               const status = getSubmissionStatus(week.week);
+              const dateRange = getWeekDateRange(week.week);
               
               return (
                 <div key={week.week} className="border-l-4 border-blue-500 pl-4 py-2">
@@ -268,7 +293,7 @@ const CurriculumSchedule = () => {
                           Week {week.week}: {week.title}
                           {getStatusIcon(status)}
                         </span>
-                        <span className="text-sm text-gray-500">{week.dates}</span>
+                        <span className="text-sm text-gray-500">{dateRange}</span>
                       </h3>
                       <ul className="mt-2 space-y-1 text-left list-disc list-inside">
                         {week.tasks.map((task, index) => (
@@ -388,4 +413,3 @@ const CurriculumSchedule = () => {
 };
 
 export default CurriculumSchedule;
-
