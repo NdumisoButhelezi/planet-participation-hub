@@ -116,9 +116,9 @@ const Login = () => {
       >
         <div className="text-center">
           <a href="/" className="inline-flex items-center gap-2 mb-6 hover:opacity-80 transition-opacity">
-            <Brain className="h-8 w-8 text-blue-600" />
-            <span className="text-2xl font-semibold bg-gradient-to-r from-blue-600 via-purple-600 to-green-500 text-transparent bg-clip-text">
-              Planet 09 AI
+            <RocketIcon className="h-8 w-8 text-purple-600" />
+            <span className="text-2xl font-semibold bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500 text-transparent bg-clip-text">
+              PlutoDev
             </span>
           </a>
           <h1 className="text-3xl font-semibold tracking-tight">Welcome Back</h1>

@@ -1,5 +1,5 @@
 
-import { Brain, Github, Linkedin, Globe } from "lucide-react";
+import { RocketIcon, Github, Linkedin, Globe } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -8,18 +8,18 @@ const Footer = () => {
         <div className="grid md:grid-cols-3 gap-8">
           <div>
             <div className="flex items-center space-x-2 mb-4">
-              <Brain className="w-6 h-6 text-indigo-400" />
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 text-transparent bg-clip-text">
-                Planet 09 AI
+              <RocketIcon className="w-6 h-6 text-purple-400" />
+              <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-indigo-400 text-transparent bg-clip-text">
+                PlutoDev
               </span>
             </div>
-            <p className="text-gray-400">Shaping the future of AI education</p>
+            <p className="text-gray-400">Shaping the future of coding education</p>
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-4">Connect With Us</h3>
             <div className="flex space-x-4">
               <a 
-                href="https://www.youtube.com/@NduAILearning" 
+                href="#" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -27,7 +27,7 @@ const Footer = () => {
                 <Globe className="w-6 h-6" />
               </a>
               <a 
-                href="https://github.com/NdumisoButhelezi" 
+                href="#" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -35,7 +35,7 @@ const Footer = () => {
                 <Github className="w-6 h-6" />
               </a>
               <a 
-                href="https://www.linkedin.com/in/ndumiso-buthelezi-81581021b/" 
+                href="#" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -47,7 +47,7 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+              <li><a href="/about" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Courses</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Competitions</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors">FAQ</a></li>
@@ -55,7 +55,7 @@ const Footer = () => {
           </div>
         </div>
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} Planet 09 AI. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} PlutoDev. All rights reserved.</p>
         </div>
       </div>
     </footer>

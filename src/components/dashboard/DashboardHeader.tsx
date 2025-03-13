@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { User } from "@/types/user";
 import { Button } from "@/components/ui/button";
-import { Brain, UserCircle, Trophy, Coins, Menu } from "lucide-react";
+import { RocketIcon, UserCircle, Trophy, Coins, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "@/lib/firebase";
 import ProfileDialog from "./ProfileDialog";
@@ -62,10 +62,10 @@ const DashboardHeader = ({ user }: DashboardHeaderProps) => {
         <div className="flex items-center gap-4 md:gap-6">
           <a 
             href="/" 
-            className="text-lg md:text-xl font-semibold text-blue-600 hover:opacity-80 transition-opacity flex items-center gap-2"
+            className="text-lg md:text-xl font-semibold text-purple-600 hover:opacity-80 transition-opacity flex items-center gap-2"
           >
-            <Brain className="h-6 w-6" />
-            <span className="hidden md:inline">Planet 09 AI</span>
+            <RocketIcon className="h-6 w-6" />
+            <span className="hidden md:inline">PlutoDev</span>
           </a>
           <div className="flex items-center gap-2 text-purple-600">
             <Coins className="h-5 w-5" />

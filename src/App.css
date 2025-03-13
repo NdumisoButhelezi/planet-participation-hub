@@ -1,3 +1,4 @@
+
 #root {
   width: 100%;
   margin: 0 auto;
@@ -11,7 +12,7 @@
   transition: filter 300ms;
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+  filter: drop-shadow(0 0 2em #a855f7aa);
 }
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
@@ -81,7 +82,7 @@
 
 /* Gradient text */
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-500;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500;
 }
 
 /* Glass card effect */
