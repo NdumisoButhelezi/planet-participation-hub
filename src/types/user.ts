@@ -20,6 +20,7 @@ export interface User {
   motivation?: string;
   accountLocked?: boolean;
   lockReason?: string;
+  registrationDate?: Date;
 }
 
 export interface Submission {

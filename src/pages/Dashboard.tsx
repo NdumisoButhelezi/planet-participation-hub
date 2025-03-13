@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, collection, addDoc, getDocs, updateDoc, query, where } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, getDocs, updateDoc, query, where, Timestamp } from "firebase/firestore";
 import { User, Submission } from "@/types/user";
 import { Event } from "@/types/events";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,8 @@ import LearningPaths from "@/components/dashboard/LearningPaths";
 import EventsSection from "@/components/dashboard/EventsSection";
 import CurriculumSchedule from "@/components/dashboard/CurriculumSchedule";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import ProgressTracker from "@/components/dashboard/ProgressTracker";
+import { calculateProgramSchedule } from "@/utils/dateUtils";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -40,6 +42,19 @@ const Dashboard = () => {
         const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
         if (userDoc.exists()) {
           const userData = { id: userDoc.id, ...userDoc.data() } as User;
+          
+          // If no registrationDate, update it to now
+          if (!userData.registrationDate) {
+            const registrationDate = new Date();
+            await updateDoc(doc(db, "users", userData.id), {
+              registrationDate: Timestamp.fromDate(registrationDate)
+            });
+            userData.registrationDate = registrationDate;
+          } else if (userData.registrationDate instanceof Timestamp) {
+            // Convert Firebase Timestamp to Date if needed
+            userData.registrationDate = userData.registrationDate.toDate();
+          }
+          
           setUser(userData);
           if (!userData.hasAcceptedAgreement && !userData.isAdmin) {
             setShowAgreement(true);
@@ -61,13 +76,21 @@ const Dashboard = () => {
     if (!user) return;
     
     try {
+      const registrationDate = new Date();
+      
       await updateDoc(doc(db, "users", user.id), {
         hasAcceptedAgreement: true,
         progress: 0,
+        registrationDate: Timestamp.fromDate(registrationDate)
       });
       
       setShowAgreement(false);
-      setUser({ ...user, hasAcceptedAgreement: true, progress: 0 });
+      setUser({ 
+        ...user, 
+        hasAcceptedAgreement: true, 
+        progress: 0,
+        registrationDate 
+      });
       
       toast({
         title: "Welcome aboard!",
@@ -166,6 +189,11 @@ const Dashboard = () => {
     );
   }
 
+  // Calculate user's program schedule based on registration date
+  const programSchedule = user.registrationDate 
+    ? calculateProgramSchedule(user.registrationDate) 
+    : null;
+
   const renderActiveSection = () => {
     switch (activeSection) {
       case "weekly-program":
@@ -208,6 +236,12 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-6 py-8">
         <WelcomeSection user={user} />
+        
+        {programSchedule && (
+          <div className="mt-6">
+            <ProgressTracker schedule={programSchedule} />
+          </div>
+        )}
         
         <div className="flex flex-col md:flex-row mt-8 space-y-6 md:space-y-0 md:gap-6">
           <DashboardSidebar 
