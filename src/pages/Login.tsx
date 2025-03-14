@@ -1,64 +1,107 @@
+
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useNavigate, Link } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { RocketIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-
-const formSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address." }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-});
+import { Brain, AlertTriangle, XCircle, Mail, Key, Loader2 } from "lucide-react";
+import { collection, getDocs, query, where, setDoc, doc } from "firebase/firestore";
+import { User } from "@/types/user";
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [shake, setShake] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
+    setError(null);
+
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        toast({
-          title: "Login Successful",
-          description: "You have successfully logged in.",
-        });
-        navigate("/dashboard");
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to load user data.",
-          variant: "destructive",
-        });
+      if (user) {
+        // Check if user exists in Firestore and get their role
+        const userQuery = query(collection(db, "users"), where("id", "==", user.uid));
+        const userSnapshot = await getDocs(userQuery);
+        
+        if (!userSnapshot.empty) {
+          const userData = userSnapshot.docs[0].data() as User;
+          
+          toast({
+            title: "Welcome back!",
+            description: "Successfully logged in.",
+          });
+
+          // Redirect based on user role
+          if (userData.isAdmin) {
+            navigate("/admin");
+          } else {
+            navigate("/dashboard");
+          }
+        } else {
+          // If no user document exists, create one with default values
+          await setDoc(doc(db, "users", user.uid), {
+            id: user.uid,
+            email: user.email,
+            skillLevel: "beginner",
+            isAdmin: false,
+            hasAcceptedAgreement: false,
+            progress: 0,
+            points: 0,
+          });
+          
+          toast({
+            title: "Welcome!",
+            description: "Your account has been set up.",
+          });
+          
+          navigate("/dashboard");
+        }
       }
     } catch (error: any) {
-      console.error("Login failed:", error.message);
+      console.error("Login error:", error);
+      setShake(true);
+      setTimeout(() => setShake(false), 820);
+      
+      // Provide more specific error messages in English
+      switch(error.code) {
+        case 'auth/invalid-email':
+          setError('Invalid email format. Please check your email address.');
+          break;
+        case 'auth/user-disabled':
+          setError('This account has been disabled. Please contact support.');
+          break;
+        case 'auth/user-not-found':
+          setError('No account found with this email. Please check your email or sign up for a new account.');
+          break;
+        case 'auth/wrong-password':
+          setError('Incorrect password. Please check your password and try again.');
+          break;
+        case 'auth/invalid-credential':
+          setError('Invalid login credentials. Please check your email and password.');
+          break;
+        case 'auth/too-many-requests':
+          setError('Too many failed login attempts. Please try again later or reset your password.');
+          break;
+        case 'auth/network-request-failed':
+          setError('Network error. Please check your internet connection and try again.');
+          break;
+        default:
+          setError('Login failed: ' + (error.message || 'Unknown error occurred. Please try again.'));
+      }
+      
       toast({
-        title: "Login Failed",
-        description: error.message,
+        title: "Login Error",
+        description: error.message || "Failed to log in. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -67,78 +110,91 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 frost-card p-8 rounded-lg frost-border">
-        <div>
-          <div className="flex items-center justify-center">
-            <RocketIcon className="h-12 w-12 text-blue-600 ice-float" />
-            <h2 className="mt-2 text-3xl font-bold pluto-gradient-text ml-2">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
+      <div className={`w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg backdrop-blur-lg border border-gray-100 transition-all ${shake ? 'animate-[shake_0.82s_cubic-bezier(.36,.07,.19,.97)_both]' : ''}`}
+        style={{ transformOrigin: '50% 50%' }}
+      >
+        <div className="text-center">
+          <a href="/" className="inline-flex items-center gap-2 mb-6 hover:opacity-80 transition-opacity">
+            <RocketIcon className="h-8 w-8 text-purple-600" />
+            <span className="text-2xl font-semibold bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-500 text-transparent bg-clip-text">
               PlutoDev
-            </h2>
-          </div>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to your account
-          </p>
+            </span>
+          </a>
+          <h1 className="text-3xl font-semibold tracking-tight">Welcome Back</h1>
+          <p className="text-gray-500">Enter your credentials to access your account</p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email address</Label>
+        
+        {error && (
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded animate-fade-in">
+            <div className="flex items-start">
+              <AlertTriangle className="h-5 w-5 text-red-500 mr-3 mt-0.5 animate-pulse" />
+              <div>
+                <p className="text-sm font-medium text-red-800">{error}</p>
+              </div>
+              <button 
+                onClick={() => setError(null)} 
+                className="ml-auto -mr-1 text-red-500 hover:text-red-700 transition-colors"
+              >
+                <XCircle className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+        )}
+        
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div className="space-y-2">
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                id="email"
                 type="email"
-                autoComplete="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10"
                 required
-                placeholder="Enter your email"
-                className="mt-1 block w-full pl-3 pr-12 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                {...register("email")}
+                disabled={isLoading}
               />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-              )}
             </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
+          </div>
+          <div className="space-y-2">
+            <div className="relative">
+              <Key className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                id="password"
                 type="password"
-                autoComplete="current-password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-10"
                 required
-                placeholder="Enter your password"
-                className="mt-1 block w-full pl-3 pr-12 sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                {...register("password")}
+                disabled={isLoading}
               />
-              {errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
-              )}
             </div>
           </div>
-
-          <div>
-            <Button
-              type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ice-pulse"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Logging in...
-                </>
-              ) : (
-                "Sign in"
-              )}
-            </Button>
-          </div>
+          <Button 
+            type="submit" 
+            className="w-full relative"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
+            )}
+          </Button>
         </form>
-
-        <div className="text-sm text-center">
-          <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-            Don't have an account? Register
-          </Link>
+        <div className="text-center text-sm space-y-2">
+          <a href="/register" className="text-gray-600 hover:text-gray-900 transition-colors">
+            Don't have an account? Sign up
+          </a>
+          <div>
+            <a href="/" className="text-blue-600 hover:text-blue-700 transition-colors">
+              Return to Home Page
+            </a>
+          </div>
         </div>
       </div>
     </div>
