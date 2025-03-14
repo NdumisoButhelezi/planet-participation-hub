@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import type { SkillLevel } from "@/types/user";
-import { Brain, AlertTriangle, XCircle, Mail, Key, User, Loader2, ShieldCheck } from "lucide-react";
+import { Brain, AlertTriangle, XCircle, Mail, Key, User, Loader2, ShieldCheck, RocketIcon } from "lucide-react";
 import {
   Select,
   SelectContent,

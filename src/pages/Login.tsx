@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Brain, AlertTriangle, XCircle, Mail, Key, Loader2 } from "lucide-react";
+import { Brain, AlertTriangle, XCircle, Mail, Key, Loader2, RocketIcon } from "lucide-react";
 import { collection, getDocs, query, where, setDoc, doc } from "firebase/firestore";
 import { User } from "@/types/user";
 
