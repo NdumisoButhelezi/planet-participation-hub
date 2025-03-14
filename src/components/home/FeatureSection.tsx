@@ -42,7 +42,7 @@ const FeatureSection = () => {
           className="text-3xl font-bold text-center mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-transparent bg-clip-text" 
           data-aos="fade-up"
         >
-          Why Choose PlutoDev?
+          Why Choose Planet 09 AI?
         </h2>
         <p 
           className="text-gray-600 text-center mb-12 max-w-2xl mx-auto" 

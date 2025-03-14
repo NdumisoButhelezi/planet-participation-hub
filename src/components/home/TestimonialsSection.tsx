@@ -21,7 +21,7 @@ const TestimonialsSection = () => {
               <Star className="text-yellow-500 w-5 h-5" />
               <Star className="text-yellow-500 w-5 h-5" />
             </div>
-            <p className="text-gray-700 mb-4">"PlutoDev transformed how I learn machine learning. The gamification makes studying enjoyable and the challenges keep me engaged."</p>
+            <p className="text-gray-700 mb-4">"Planet 09 AI transformed how I learn machine learning. The gamification makes studying enjoyable and the challenges keep me engaged."</p>
             <div className="font-medium">- Sarah J., Data Scientist</div>
           </div>
           
