@@ -1,7 +1,8 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
-import { doc, getDoc, collection, addDoc, getDocs, updateDoc, query, where, Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, getDocs, updateDoc, query, where, Timestamp, onSnapshot } from "firebase/firestore";
 import { User, Submission } from "@/types/user";
 import { Event } from "@/types/events";
 import { useToast } from "@/hooks/use-toast";
