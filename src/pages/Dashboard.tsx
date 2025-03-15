@@ -20,6 +20,7 @@ const Dashboard = () => {
   const [showAgreement, setShowAgreement] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
   const [activeSection, setActiveSection] = useState("weekly-program");
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   
   const [projectLink, setProjectLink] = useState("");
   const [socialMediaLink, setSocialMediaLink] = useState("");
@@ -67,6 +68,23 @@ const Dashboard = () => {
 
     return () => unsubscribe();
   }, [navigate, toast]);
+
+  useEffect(() => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    const submissionsQuery = query(collection(db, "submissions"), where("userId", "==", userId));
+    const unsubscribe = onSnapshot(submissionsQuery, (snapshot) => {
+      const submissionsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate()
+      })) as Submission[];
+      setSubmissions(submissionsData);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleAcceptAgreement = async () => {
     if (!user) return;
@@ -230,7 +248,10 @@ const Dashboard = () => {
         
         {programSchedule && (
           <div className="mt-6">
-            <ProgressTracker schedule={programSchedule} />
+            <ProgressTracker 
+              schedule={programSchedule} 
+              submissions={submissions.filter(sub => sub.taskId.startsWith("week-"))}
+            />
           </div>
         )}
         

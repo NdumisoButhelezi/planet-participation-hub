@@ -178,22 +178,48 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
         points: (userData.points || 0) + 10
       });
 
-      await addDoc(collection(db, "submissions"), {
-        userId,
-        taskId: `week-${selectedWeek}`,
-        content: learningReflection,
-        projectLink,
-        socialMediaLink,
-        peersEngaged: parseInt(peersEngaged),
-        status: "pending",
-        createdAt: new Date(),
-        learningReflection
-      });
-
-      toast({
-        title: "Success",
-        description: `Week ${selectedWeek} reflection submitted successfully! (+10 points)`,
-      });
+      const existingSubmissionQuery = query(
+        collection(db, "submissions"), 
+        where("userId", "==", userId),
+        where("taskId", "==", `week-${selectedWeek}`)
+      );
+      
+      const existingSubmissionDocs = await getDocs(existingSubmissionQuery);
+      
+      if (!existingSubmissionDocs.empty) {
+        const submissionDoc = existingSubmissionDocs.docs[0];
+        await updateDoc(doc(db, "submissions", submissionDoc.id), {
+          content: learningReflection,
+          projectLink,
+          socialMediaLink,
+          peersEngaged: parseInt(peersEngaged),
+          status: "pending",
+          updatedAt: new Date(),
+          learningReflection
+        });
+        
+        toast({
+          title: "Success",
+          description: `Week ${selectedWeek} submission updated successfully!`,
+        });
+      } else {
+        await addDoc(collection(db, "submissions"), {
+          userId,
+          taskId: `week-${selectedWeek}`,
+          content: learningReflection,
+          projectLink,
+          socialMediaLink,
+          peersEngaged: parseInt(peersEngaged),
+          status: "pending",
+          createdAt: new Date(),
+          learningReflection
+        });
+        
+        toast({
+          title: "Success",
+          description: `Week ${selectedWeek} reflection submitted successfully! (+10 points)`,
+        });
+      }
 
       setProjectLink("");
       setSocialMediaLink("");
@@ -268,6 +294,26 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
     
     return `Program Schedule (${startMonth} ${startYear} - ${endMonth} ${endYear})`;
   };
+
+  useEffect(() => {
+    if (selectedWeek && isDialogOpen) {
+      const existingSubmission = submissions.find(
+        s => s.taskId === `week-${selectedWeek}`
+      );
+      
+      if (existingSubmission) {
+        setProjectLink(existingSubmission.projectLink || "");
+        setSocialMediaLink(existingSubmission.socialMediaLink || "");
+        setPeersEngaged(existingSubmission.peersEngaged?.toString() || "0");
+        setLearningReflection(existingSubmission.learningReflection || "");
+      } else {
+        setProjectLink("");
+        setSocialMediaLink("");
+        setPeersEngaged("0");
+        setLearningReflection("");
+      }
+    }
+  }, [selectedWeek, isDialogOpen, submissions]);
 
   return (
     <>
@@ -349,7 +395,7 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
                       }}
                       disabled={status === "approved"}
                     >
-                      {status === "approved" ? "Completed" : "Submit Reflection"}
+                      {status === "approved" ? "Completed" : status === "pending" ? "Update Submission" : "Submit Reflection"}
                     </Button>
                   </div>
                 </div>
@@ -362,7 +408,11 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className={`${isMobile ? 'w-[95vw]' : 'sm:max-w-[500px]'} p-4 md:p-6`}>
           <DialogHeader>
-            <DialogTitle>Submit Week {selectedWeek} Reflection</DialogTitle>
+            <DialogTitle>
+              {submissions.some(s => s.taskId === `week-${selectedWeek}`) 
+                ? `Update Week ${selectedWeek} Submission` 
+                : `Submit Week ${selectedWeek} Reflection`}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="space-y-2">
@@ -403,7 +453,9 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
               className="w-full bg-blue-600 hover:bg-blue-700"
               onClick={handleSubmitReflection}
             >
-              Submit Reflection
+              {submissions.some(s => s.taskId === `week-${selectedWeek}`) 
+                ? "Update Submission" 
+                : "Submit Reflection"}
             </Button>
           </div>
         </DialogContent>
