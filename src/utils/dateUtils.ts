@@ -9,6 +9,7 @@ export interface WeeklySchedule {
   dueDate: Date;
   weeklyDueDates: { week: number; date: Date }[];
   progress: number;
+  daysLeft: number;
 }
 
 /**
@@ -43,6 +44,10 @@ export function calculateProgramSchedule(registrationDate: Date): WeeklySchedule
   // Calculate progress percentage
   const progress = Math.min(Math.round((currentWeek / totalWeeks) * 100), 100);
   
+  // Calculate days left until program ends
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const daysLeft = Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / msPerDay));
+  
   return {
     startDate,
     endDate,
@@ -50,7 +55,8 @@ export function calculateProgramSchedule(registrationDate: Date): WeeklySchedule
     totalWeeks,
     dueDate: endDate,
     weeklyDueDates,
-    progress
+    progress,
+    daysLeft
   };
 }
 

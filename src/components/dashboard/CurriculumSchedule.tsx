@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, CheckCircle, XCircle, Clock, Eye, EyeOff } from "lucide-react";
+import { CalendarDays, CheckCircle, XCircle, Clock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,7 +16,7 @@ import { auth, db } from "@/lib/firebase";
 import { addDoc, collection, query, where, getDocs, onSnapshot, updateDoc, doc } from "firebase/firestore";
 import { User, Submission } from "@/types/user";
 import { WeeklySchedule, formatDate } from "@/utils/dateUtils";
-import { addDays, format } from "date-fns";
+import { addDays, format, differenceInDays } from "date-fns";
 
 interface WeeklyTask {
   week: number;
@@ -221,6 +221,18 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
         });
       }
 
+      const completedTasks = submissions.filter(
+        s => s.status === "approved" && s.taskId.startsWith("week-")
+      ).length;
+      
+      const newProgress = Math.min(Math.round((completedTasks / 8) * 100), 100);
+      
+      if (currentUser && newProgress !== currentUser.progress) {
+        await updateDoc(userRef, {
+          progress: newProgress
+        });
+      }
+
       setProjectLink("");
       setSocialMediaLink("");
       setPeersEngaged("0");
@@ -235,6 +247,28 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
       });
     }
   };
+
+  const getNextActiveWeek = () => {
+    if (!submissions || submissions.length === 0) {
+      return programSchedule?.currentWeek || 1;
+    }
+    
+    const completedWeeks = new Set(
+      submissions
+        .filter(sub => sub.status === "approved" && sub.taskId.startsWith("week-"))
+        .map(sub => parseInt(sub.taskId.replace("week-", "")))
+    );
+    
+    for (let i = 1; i <= 8; i++) {
+      if (!completedWeeks.has(i)) {
+        return i;
+      }
+    }
+    
+    return 8;
+  };
+
+  const nextActiveWeek = getNextActiveWeek();
 
   const getSubmissionStatus = (week: number) => {
     const submission = submissions.find(s => s.taskId === `week-${week}`);
@@ -275,6 +309,11 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
     const weekEnd = addDays(weekStart, 6);
     
     return `${format(weekStart, "MMM d")} - ${format(weekEnd, "MMM d, yyyy")}`;
+  };
+
+  const getDaysRemaining = (dueDate: Date) => {
+    const today = new Date();
+    return Math.max(0, differenceInDays(dueDate, today));
   };
 
   const getCardTitle = () => {
@@ -329,18 +368,45 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
             {curriculumData.map((week) => {
               const status = getSubmissionStatus(week.week);
               const dateRange = getWeekDateRange(week.week);
+              const isActive = week.week === nextActiveWeek;
+              const weekDueDate = programSchedule?.weeklyDueDates.find(w => w.week === week.week)?.date;
+              const daysRemaining = weekDueDate ? getDaysRemaining(weekDueDate) : 0;
               
               return (
-                <div key={week.week} className="border-l-4 border-blue-500 pl-4 py-2">
+                <div 
+                  key={week.week} 
+                  className={`border-l-4 pl-4 py-2 ${
+                    status === "approved" 
+                      ? "border-green-500" 
+                      : status === "rejected"
+                      ? "border-red-500"
+                      : isActive
+                      ? "border-amber-500"
+                      : "border-blue-500"
+                  } ${isActive ? "bg-amber-50/30" : ""}`}
+                >
                   <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold flex flex-col md:flex-row md:items-center gap-2 mb-2">
                         <span className="flex items-center gap-2">
                           Week {week.week}: {week.title}
                           {getStatusIcon(status)}
+                          {isActive && <span className="text-xs font-normal ml-2 px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full">Active</span>}
                         </span>
                         <span className="text-sm text-gray-500">{dateRange}</span>
                       </h3>
+                      
+                      {isActive && weekDueDate && (
+                        <div className="mb-2 text-sm">
+                          <span className="inline-flex items-center gap-1">
+                            <Clock className="h-4 w-4 text-amber-600" />
+                            <span className="font-medium text-amber-700">
+                              {daysRemaining} days remaining
+                            </span>
+                          </span>
+                        </div>
+                      )}
+                      
                       <ul className="mt-2 space-y-1 text-left list-disc list-inside">
                         {week.tasks.map((task, index) => (
                           <li key={index} className="text-gray-600 text-sm pl-0">
@@ -387,15 +453,15 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
                       )}
                     </div>
                     <Button 
-                      variant="outline"
-                      className="w-full md:w-auto shrink-0"
+                      variant={isActive ? "default" : "outline"}
+                      className={`w-full md:w-auto shrink-0 ${isActive ? "bg-amber-500 hover:bg-amber-600" : ""}`}
                       onClick={() => {
                         setSelectedWeek(week.week);
                         setIsDialogOpen(true);
                       }}
                       disabled={status === "approved"}
                     >
-                      {status === "approved" ? "Completed" : status === "pending" ? "Update Submission" : "Submit Reflection"}
+                      {status === "approved" ? "Completed" : status === "pending" ? "Update Submission" : isActive ? "Submit Now" : "Submit Reflection"}
                     </Button>
                   </div>
                 </div>

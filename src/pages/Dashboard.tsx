@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
@@ -81,11 +80,28 @@ const Dashboard = () => {
         ...doc.data(),
         createdAt: doc.data().createdAt?.toDate()
       })) as Submission[];
+      
       setSubmissions(submissionsData);
+      
+      if (user) {
+        const completedWeeks = submissionsData.filter(sub => 
+          sub.status === "approved" && sub.taskId.startsWith("week-")
+        ).length;
+        
+        const newProgress = Math.min(Math.round((completedWeeks / 8) * 100), 100);
+        
+        if (newProgress !== user.progress) {
+          updateDoc(doc(db, "users", user.id), {
+            progress: newProgress
+          });
+          
+          setUser(prev => prev ? { ...prev, progress: newProgress } : null);
+        }
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   const handleAcceptAgreement = async () => {
     if (!user) return;
