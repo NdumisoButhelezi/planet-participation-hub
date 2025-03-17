@@ -6,20 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, AlertTriangle, XCircle, Loader2, RocketIcon, ArrowLeft, Lock } from "lucide-react";
+import { Mail, AlertTriangle, XCircle, Loader2, RocketIcon, ArrowLeft, Lock, Eye, EyeOff } from "lucide-react";
 import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
-import { signInWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [shake, setShake] = useState(false);
   const [step, setStep] = useState<"verify" | "reset">("verify");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -41,7 +42,7 @@ const ForgotPassword = () => {
       setStep("reset");
       toast({
         title: "Email verified",
-        description: "Please enter your current password and new password",
+        description: "Please enter your new password",
       });
     } catch (error: any) {
       console.error("Email verification error:", error);
@@ -73,8 +74,8 @@ const ForgotPassword = () => {
     }
 
     try {
-      // Sign in with current password to verify user
-      const userCredential = await signInWithEmailAndPassword(auth, email, currentPassword);
+      // Sign in with email (we'll use a temporary login approach)
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       // Update the password
@@ -94,7 +95,7 @@ const ForgotPassword = () => {
       // Provide user-friendly error messages
       switch(error.code) {
         case 'auth/wrong-password':
-          setError('Current password is incorrect. Please try again.');
+          setError('The password is incorrect. Please try again.');
           break;
         case 'auth/weak-password':
           setError('New password is too weak. Please use at least 6 characters.');
@@ -114,6 +115,14 @@ const ForgotPassword = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   return (
@@ -206,42 +215,52 @@ const ForgotPassword = () => {
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      type="password"
-                      placeholder="Current Password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full pl-10"
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       placeholder="New Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10"
+                      className="w-full pl-10 pr-10"
                       required
                       disabled={isLoading}
                     />
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <div className="relative">
                     <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm New Password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full pl-10"
+                      className="w-full pl-10 pr-10"
                       required
                       disabled={isLoading}
                     />
+                    <button
+                      type="button"
+                      onClick={toggleConfirmPasswordVisibility}
+                      className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                      tabIndex={-1}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
                 <Button 
