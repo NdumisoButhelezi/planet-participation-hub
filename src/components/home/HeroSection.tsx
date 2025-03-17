@@ -1,5 +1,5 @@
 
-import { RocketIcon, ArrowRight } from "lucide-react";
+import { RocketIcon, ArrowRight, Snowflake, ThermometerSnowflake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -10,39 +10,66 @@ interface HeroSectionProps {
 const HeroSection = ({ onShowAgreement }: HeroSectionProps) => {
   const navigate = useNavigate();
 
+  // Generate multiple snowflakes
+  const snowflakes = [...Array(15)].map((_, i) => (
+    <div 
+      key={i} 
+      className="absolute animate-[snowfall_8s_linear_infinite]"
+      style={{
+        left: `${Math.random() * 100}%`,
+        top: `-${Math.random() * 10}%`,
+        animationDuration: `${Math.random() * 8 + 4}s`,
+        animationDelay: `${Math.random() * 5}s`,
+        opacity: Math.random() * 0.7 + 0.3,
+      }}
+    >
+      <Snowflake className="text-white h-4 w-4" />
+    </div>
+  ));
+
   return (
     <section 
-      className="pt-32 pb-20 px-4 text-white relative"
+      className="pt-32 pb-20 px-4 text-white relative overflow-hidden"
       style={{
-        background: "linear-gradient(rgba(109, 40, 217, 0.85), rgba(79, 70, 229, 0.85)), url('https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=2000&q=80') no-repeat center center",
+        background: "linear-gradient(rgba(59, 130, 246, 0.85), rgba(37, 99, 235, 0.85)), url('https://images.unsplash.com/photo-1485833077593-4278bba3f11f?auto=format&fit=crop&w=2000&q=80') no-repeat center center",
         backgroundSize: "cover"
       }}
     >
+      {/* Animated snowflakes */}
+      {snowflakes}
+      
       <div className="container mx-auto">
-        <div className="max-w-3xl mx-auto text-center" data-aos="fade-up">
+        <div className="max-w-3xl mx-auto text-center relative z-10" data-aos="fade-up">
+          <div className="inline-flex items-center justify-center p-2 bg-white/10 backdrop-blur-sm rounded-full mb-4">
+            <ThermometerSnowflake className="mr-2 h-5 w-5 text-blue-200" />
+            <span className="text-blue-100">Welcome to the Arctic Zone</span>
+          </div>
           <h1 className="text-5xl font-bold leading-tight mb-6 text-white">
-            Learn & Build with PlutoDev
+            Learn & Build with <span className="text-blue-200">PlutoDev</span>
           </h1>
-          <p className="text-xl text-indigo-100 mb-8">
-            Join our gamified learning platform where you can earn points, climb the leaderboard, and master software development while competing with peers.
+          <p className="text-xl text-blue-100 mb-8">
+            Join our frost-powered learning platform where you can earn points, climb the leaderboard, and master software development while competing with peers.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               onClick={() => navigate("/register")}
-              className="bg-white text-purple-900 hover:bg-indigo-100 px-8 py-6 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105"
+              className="bg-white text-blue-700 hover:bg-blue-50 px-8 py-6 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 group"
             >
-              Start Coding Today <ArrowRight className="ml-2 w-5 h-5" />
+              Start Coding Today <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button 
               variant="outline"
               onClick={onShowAgreement}
-              className="border-2 border-white text-white bg-purple-800/30 hover:bg-white/20 px-8 py-6 rounded-full transition-all shadow-md"
+              className="border-2 border-white text-white bg-blue-600/30 hover:bg-white/20 px-8 py-6 rounded-full transition-all shadow-md"
             >
               Learn More
             </Button>
           </div>
         </div>
       </div>
+      
+      {/* Ice border at the bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white/30 to-transparent"></div>
     </section>
   );
 };

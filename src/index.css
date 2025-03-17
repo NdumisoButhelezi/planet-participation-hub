@@ -1,11 +1,10 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 100% 98%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -14,16 +13,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 270 91.2% 59.8%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 217 71% 53%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 270 27.9% 16.9%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 200 63% 90%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 270 40% 96.1%;
+    --accent: 186 83% 85%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
@@ -31,31 +30,31 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 270 91.2% 59.8%;
+    --ring: 217 71% 53%;
 
     --radius: 0.5rem;
   }
  
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 217 33% 17%;
     --foreground: 210 40% 98%;
  
-    --card: 222.2 84% 4.9%;
+    --card: 217 33% 17%;
     --card-foreground: 210 40% 98%;
  
-    --popover: 222.2 84% 4.9%;
+    --popover: 217 33% 17%;
     --popover-foreground: 210 40% 98%;
  
-    --primary: 270 91.2% 59.8%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 217 71% 53%;
+    --primary-foreground: 210 40% 98%;
  
-    --secondary: 270 27.9% 16.9%;
+    --secondary: 212 45% 25%;
     --secondary-foreground: 210 40% 98%;
  
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 217 33% 25%;
     --muted-foreground: 215 20.2% 65.1%;
  
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 186 83% 25%;
     --accent-foreground: 210 40% 98%;
  
     --destructive: 0 62.8% 30.6%;
@@ -63,7 +62,7 @@
  
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 270 91.2% 59.8%;
+    --ring: 217 71% 53%;
   }
 }
 
@@ -73,5 +72,130 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: url('https://images.unsplash.com/photo-1458668383970-8ddd3927deed?auto=format&fit=crop&w=2000&q=80');
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-color: rgba(240, 249, 255, 0.7);
+    background-blend-mode: overlay;
+  }
+}
+
+/* Custom animations */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.float-animation {
+  animation: float 5s ease-in-out infinite;
+}
+
+@keyframes shake {
+  10%, 90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+  
+  20%, 80% {
+    transform: translate3d(2px, 0, 0);
+  }
+
+  30%, 50%, 70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+
+  40%, 60% {
+    transform: translate3d(4px, 0, 0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+/* Gradient text */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-blue-400 to-blue-300;
+}
+
+/* Glass card effect */
+.glass-card {
+  @apply bg-white/80 backdrop-blur-sm border border-white/60 shadow-lg;
+}
+
+/* Snowfall animation */
+@keyframes snowfall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  100% {
+    transform: translateY(20px) rotate(360deg);
+  }
+}
+
+.snowflake {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(white, white);
+  border-radius: 50%;
+  filter: drop-shadow(0 0 10px white);
+}
+
+.snowflake:nth-child(odd) {
+  animation: snowfall 4s linear infinite;
+}
+
+.snowflake:nth-child(even) {
+  animation: snowfall 6s linear infinite;
+}
+
+/* Ice border */
+.ice-border {
+  @apply border border-blue-100 shadow-[0_0_8px_rgba(191,219,254,0.8)];
+}
+
+/* North pole theme */
+.north-pole-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(227,242,253,0.9) 100%);
+  @apply rounded-lg shadow-md border border-blue-100;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+  
+  nav {
+    padding: 0.5rem 1rem;
+  }
+  
+  .card {
+    padding: 1em;
+  }
+  
+  h1 {
+    font-size: 2.5rem !important;
+  }
+  
+  h2 {
+    font-size: 2rem !important;
   }
 }
