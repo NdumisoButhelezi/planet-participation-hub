@@ -29,7 +29,7 @@ const HeroSection = ({ onShowAgreement }: HeroSectionProps) => {
 
   return (
     <section 
-      className="pt-32 pb-20 px-4 text-white relative overflow-hidden"
+      className="pt-20 md:pt-32 pb-16 md:pb-20 px-4 text-white relative overflow-hidden"
       style={{
         background: "linear-gradient(rgba(59, 130, 246, 0.85), rgba(37, 99, 235, 0.85)), url('https://images.unsplash.com/photo-1485833077593-4278bba3f11f?auto=format&fit=crop&w=2000&q=80') no-repeat center center",
         backgroundSize: "cover"
@@ -41,26 +41,26 @@ const HeroSection = ({ onShowAgreement }: HeroSectionProps) => {
       <div className="container mx-auto">
         <div className="max-w-3xl mx-auto text-center relative z-10" data-aos="fade-up">
           <div className="inline-flex items-center justify-center p-2 bg-white/10 backdrop-blur-sm rounded-full mb-4">
-            <ThermometerSnowflake className="mr-2 h-5 w-5 text-blue-200" />
-            <span className="text-blue-100">Welcome to the Arctic Zone</span>
+            <ThermometerSnowflake className="mr-2 h-4 w-4 text-blue-200" />
+            <span className="text-sm md:text-base text-blue-100">Welcome to the Arctic Zone</span>
           </div>
-          <h1 className="text-5xl font-bold leading-tight mb-6 text-white">
+          <h1 className="text-3xl md:text-5xl font-bold leading-tight mb-4 md:mb-6 text-white">
             Learn & Build with <span className="text-blue-200">PlutoDev</span>
           </h1>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-base md:text-xl text-blue-100 mb-6 md:mb-8">
             Join our frost-powered learning platform where you can earn points, climb the leaderboard, and master software development while competing with peers.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               onClick={() => navigate("/register")}
-              className="bg-white text-blue-700 hover:bg-blue-50 px-8 py-6 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 group"
+              className="bg-white text-blue-700 hover:bg-blue-50 px-6 md:px-8 py-5 md:py-6 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 group w-full sm:w-auto"
             >
               Start Coding Today <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button 
               variant="outline"
               onClick={onShowAgreement}
-              className="border-2 border-white text-white bg-blue-600/30 hover:bg-white/20 px-8 py-6 rounded-full transition-all shadow-md"
+              className="border-2 border-white text-white bg-blue-600/30 hover:bg-white/20 px-6 md:px-8 py-5 md:py-6 rounded-full transition-all shadow-md w-full sm:w-auto"
             >
               Learn More
             </Button>

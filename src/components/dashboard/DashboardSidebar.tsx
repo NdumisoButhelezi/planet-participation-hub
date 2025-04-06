@@ -27,15 +27,15 @@ const DashboardSidebar = ({ activeSection, onChangeSection }: DashboardSidebarPr
   ];
 
   return (
-    <div className="w-full md:w-64 bg-white shadow-md rounded-lg p-4 mr-4">
+    <div className="w-full md:w-64 bg-white shadow-md rounded-lg p-4 mb-4 md:mb-0 md:mr-4 ice-border">
       <h3 className="text-lg font-semibold text-gray-700 mb-4 pl-2">Navigation</h3>
-      <nav className="space-y-2">
+      <nav className="flex md:block overflow-x-auto md:overflow-visible pb-2 md:pb-0 -mx-2 px-2 md:px-0">
         {navItems.map((item) => (
           <button
             key={item.id}
             onClick={() => onChangeSection(item.id)}
             className={cn(
-              "w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors text-left",
+              "flex-shrink-0 flex items-center space-x-2 md:space-x-3 px-3 md:px-4 py-2 md:py-3 rounded-lg transition-colors text-left whitespace-nowrap md:whitespace-normal md:w-full mb-0 md:mb-2 mr-2 md:mr-0",
               activeSection === item.id
                 ? "bg-indigo-100 text-indigo-800 font-medium"
                 : "text-gray-600 hover:bg-gray-100"
