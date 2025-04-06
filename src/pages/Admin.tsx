@@ -14,6 +14,8 @@ import UsersManagement from "@/components/admin/UsersManagement";
 import SubmissionsManagement from "@/components/admin/SubmissionsManagement";
 import AdminNavigation from "@/components/admin/AdminNavigation";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { responsiveClasses } from "@/utils/responsiveUtils";
 
 const Admin = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -35,6 +37,7 @@ const Admin = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -116,56 +119,73 @@ const Admin = () => {
   const renderContent = () => {
     switch (currentView) {
       case 'users':
-        return <UsersManagement users={users} onUserUpdate={setUsers} />;
+        return (
+          <div className="bg-white/70 backdrop-blur-md rounded-lg shadow-lg ice-border p-4">
+            <UsersManagement users={users} onUserUpdate={setUsers} />
+          </div>
+        );
       
       case 'events':
         return (
-          <div className="space-y-6">
+          <div className="bg-white/70 backdrop-blur-md rounded-lg shadow-lg ice-border p-4 space-y-6">
             <div className="flex justify-end mb-6">
               <Button 
                 onClick={() => setShowEventForm(true)}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                size={isMobile ? "sm" : "default"}
               >
                 <Plus className="h-4 w-4" />
-                Create New Event
+                {!isMobile && "Create New Event"}
               </Button>
             </div>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {events.map((event) => (
-                <EventCard
-                  key={event.id}
-                  event={event}
-                  isAdmin={true}
-                  onEdit={() => {
-                    setSelectedEvent(event);
-                    setPerspective(event.perspective);
-                    setName(event.name);
-                    setDate(event.date);
-                    setTargetGroup(event.targetGroup);
-                    setObjectives(event.objectives);
-                    setOutcome(event.outcome);
-                    setPerspectiveWeighting(event.perspectiveWeighting.toString());
-                    setShowEventForm(true);
-                  }}
-                  onDelete={() => {}}
-                  onRegister={() => {}}
-                />
-              ))}
-            </div>
+            {events.length === 0 ? (
+              <div className="text-center p-8 bg-white/50 rounded-lg">
+                <p className="text-gray-600">No events available. Create your first event!</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {events.map((event) => (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    isAdmin={true}
+                    onEdit={() => {
+                      setSelectedEvent(event);
+                      setPerspective(event.perspective);
+                      setName(event.name);
+                      setDate(event.date);
+                      setTargetGroup(event.targetGroup);
+                      setObjectives(event.objectives);
+                      setOutcome(event.outcome);
+                      setPerspectiveWeighting(event.perspectiveWeighting.toString());
+                      setShowEventForm(true);
+                    }}
+                    onDelete={() => {}}
+                    onRegister={() => {}}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         );
 
       case 'submissions':
         return (
-          <SubmissionsManagement 
-            submissions={submissions} 
-            users={users} 
-            onSubmissionUpdate={setSubmissions}
-          />
+          <div className="bg-white/70 backdrop-blur-md rounded-lg shadow-lg ice-border p-4">
+            <SubmissionsManagement 
+              submissions={submissions} 
+              users={users} 
+              onSubmissionUpdate={setSubmissions}
+            />
+          </div>
         );
 
       case 'registrations':
-        return <EventRegistrationsView />;
+        return (
+          <div className="bg-white/70 backdrop-blur-md rounded-lg shadow-lg ice-border p-4">
+            <EventRegistrationsView />
+          </div>
+        );
 
       default:
         return <div>Select a view</div>;
@@ -204,22 +224,29 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="w-full bg-white/80 backdrop-blur-lg border-b border-gray-100">
+      <nav className={responsiveClasses(
+        "w-full bg-white/70 backdrop-blur-lg border-b border-gray-100 sticky top-0 z-10",
+        "px-2", "px-4", "px-6"
+      )}>
         <div className="container mx-auto">
-          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
-            <div className="flex items-center gap-4">
-              <a href="/" className="text-xl font-semibold text-blue-600">
+          <div className={responsiveClasses(
+            "flex justify-between items-center py-3 sm:py-4 border-b border-gray-100",
+            "px-2", "px-4", "px-6"
+          )}>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <a href="/" className="text-lg sm:text-xl font-semibold text-blue-600">
                 PLANET 09 AI WRITING
               </a>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <Button 
                 variant="ghost" 
                 onClick={() => navigate("/dashboard")}
                 className="flex items-center gap-2"
+                size={isMobile ? "sm" : "default"}
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
+                {!isMobile && "Back to Dashboard"}
               </Button>
             </div>
           </div>
@@ -231,9 +258,18 @@ const Admin = () => {
         </div>
       </nav>
 
-      <main className="container mx-auto px-6 py-8">
-        <div className="space-y-8">
-          {renderContent()}
+      <main className={responsiveClasses(
+        "container mx-auto py-4 sm:py-8",
+        "px-2", "px-4", "px-6"
+      )}>
+        <div className="space-y-4 sm:space-y-8">
+          {isLoading ? (
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            renderContent()
+          )}
         </div>
       </main>
 

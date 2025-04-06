@@ -6,6 +6,7 @@ import EventRegistrationForm from "./EventRegistrationForm";
 import ShareEventPopover from "./ShareEventPopover";
 import AdminActions from "./AdminActions";
 import EventDetails from "./EventDetails";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EventCardProps {
   event: Event;
@@ -17,6 +18,7 @@ interface EventCardProps {
 
 const EventCard = ({ event, isAdmin, onEdit, onDelete, onRegister }: EventCardProps) => {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleRegister = () => {
     setShowRegistrationForm(true);
@@ -24,10 +26,10 @@ const EventCard = ({ event, isAdmin, onEdit, onDelete, onRegister }: EventCardPr
 
   return (
     <>
-      <Card className="bg-white hover:shadow-lg transition-shadow">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-xl font-semibold">{event.name}</CardTitle>
-          <div className="flex gap-2">
+      <Card className="bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow ice-border">
+        <CardHeader className={`flex flex-row items-center justify-between ${isMobile ? 'px-3 py-3' : ''}`}>
+          <CardTitle className="text-base sm:text-lg font-semibold line-clamp-1">{event.name}</CardTitle>
+          <div className="flex gap-1 sm:gap-2">
             <ShareEventPopover 
               eventId={event.id}
               eventName={event.name}
@@ -43,7 +45,7 @@ const EventCard = ({ event, isAdmin, onEdit, onDelete, onRegister }: EventCardPr
             )}
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className={isMobile ? 'px-3 pb-3' : ''}>
           <EventDetails 
             date={event.date}
             targetGroup={event.targetGroup}
