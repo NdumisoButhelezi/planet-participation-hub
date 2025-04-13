@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -8,11 +9,13 @@ import { useState, useEffect } from "react";
 import { db, auth } from "@/lib/firebase";
 import { addDoc, collection, doc, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { Trophy } from "lucide-react";
 
 interface EventRegistrationFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   eventId: string;
+  onSuccess?: () => void;
 }
 
 const AI_INTERESTS = [
@@ -25,7 +28,7 @@ const AI_INTERESTS = [
   "Reinforcement Learning"
 ];
 
-const EventRegistrationForm = ({ open, onOpenChange, eventId }: EventRegistrationFormProps) => {
+const EventRegistrationForm = ({ open, onOpenChange, eventId, onSuccess }: EventRegistrationFormProps) => {
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     fullName: "",
@@ -101,14 +104,18 @@ const EventRegistrationForm = ({ open, onOpenChange, eventId }: EventRegistratio
         ...formData,
         eventId,
         userId,
-        status: "pending",
+        status: "pending", // Admin needs to approve to award points
         createdAt: new Date(),
       });
 
       toast({
         title: "Success",
-        description: "Registration submitted successfully",
+        description: "Registration submitted successfully. If approved, you'll earn 100 points!",
       });
+      
+      if (onSuccess) {
+        onSuccess();
+      }
       
       onOpenChange(false);
     } catch (error) {
@@ -128,8 +135,23 @@ const EventRegistrationForm = ({ open, onOpenChange, eventId }: EventRegistratio
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Event Registration</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Event Registration
+            <div className="bg-blue-50 p-1 rounded-full ml-2">
+              <Trophy className="h-5 w-5 text-amber-500" />
+            </div>
+          </DialogTitle>
         </DialogHeader>
+        
+        <div className="bg-blue-50 p-3 rounded-md mb-4 text-sm text-blue-600 flex items-start">
+          <div className="flex-shrink-0 mr-2 mt-0.5">
+            <Trophy className="h-4 w-4 text-amber-500" />
+          </div>
+          <p>
+            Complete this registration and get approved by an admin to earn <span className="font-semibold">100 points</span> on the leaderboard!
+          </p>
+        </div>
+        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-4">
             <Input
@@ -179,7 +201,7 @@ const EventRegistrationForm = ({ open, onOpenChange, eventId }: EventRegistratio
 
             <div className="space-y-2">
               <p className="font-medium text-gray-700">AI Interest Areas:</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {AI_INTERESTS.map((interest) => (
                   <div key={interest} className="flex items-center space-x-2">
                     <Checkbox
@@ -233,8 +255,21 @@ const EventRegistrationForm = ({ open, onOpenChange, eventId }: EventRegistratio
             />
           </div>
 
-          <DialogFooter>
-            <Button type="submit">Submit Registration</Button>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit"
+              className="w-full sm:w-auto"
+            >
+              Submit Registration
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

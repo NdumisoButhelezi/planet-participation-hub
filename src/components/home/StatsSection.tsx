@@ -16,6 +16,16 @@ const StatsSection = () => {
         >
           Our Impact
         </h2>
+        
+        {/* Impact image */}
+        <div className="mb-12 text-center" data-aos="fade-up">
+          <img 
+            src="https://i.ibb.co/Mnn7f2W/impact-image.jpg" 
+            alt="Our Impact" 
+            className="max-w-full rounded-xl shadow-lg mx-auto"
+          />
+        </div>
+        
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 text-center">
           {stats.map((stat, index) => (
             <div 

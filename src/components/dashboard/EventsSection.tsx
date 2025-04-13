@@ -2,6 +2,9 @@
 import { Event } from "@/types/events";
 import EventCard from "../events/EventCard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useState } from "react";
+import EventRegistrationForm from "../events/EventRegistrationForm";
+import { useToast } from "@/hooks/use-toast";
 
 interface EventsSectionProps {
   events: Event[];
@@ -10,6 +13,22 @@ interface EventsSectionProps {
 
 const EventsSection = ({ events, onRegister }: EventsSectionProps) => {
   const isMobile = useIsMobile();
+  const { toast } = useToast();
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string>("");
+
+  const handleRegisterClick = (eventId: string) => {
+    setSelectedEventId(eventId);
+    setShowRegistrationForm(true);
+  };
+
+  const handleRegistrationSuccess = () => {
+    onRegister(selectedEventId);
+    toast({
+      title: "Registration Submitted",
+      description: "Your registration has been submitted for review. If approved, you'll earn 100 points!",
+    });
+  };
 
   return (
     <div className="bg-white/80 backdrop-blur-sm p-4 sm:p-6 rounded-lg shadow-md ice-border">
@@ -28,10 +47,19 @@ const EventsSection = ({ events, onRegister }: EventsSectionProps) => {
               isAdmin={false}
               onEdit={() => {}}
               onDelete={() => {}}
-              onRegister={onRegister}
+              onRegister={() => handleRegisterClick(event.id)}
             />
           ))}
         </div>
+      )}
+
+      {showRegistrationForm && (
+        <EventRegistrationForm
+          open={showRegistrationForm}
+          onOpenChange={setShowRegistrationForm}
+          eventId={selectedEventId}
+          onSuccess={handleRegistrationSuccess}
+        />
       )}
     </div>
   );

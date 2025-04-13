@@ -3,6 +3,7 @@ import { useState } from "react";
 import { RocketIcon, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -23,13 +24,14 @@ const Navbar = () => {
             </span>
           </div>
           
-          {/* Mobile menu button */}
+          {/* Mobile menu button - Hamburger icon */}
           <div className="md:hidden">
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={toggleMobileMenu}
               className="text-gray-600"
+              aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
@@ -49,9 +51,9 @@ const Navbar = () => {
           </div>
         </div>
         
-        {/* Mobile menu */}
+        {/* Mobile menu - Slide down animation */}
         {mobileMenuOpen && (
-          <div className="md:hidden pt-4 pb-3 border-t border-gray-100 mt-3 animate-in slide-in-from-top">
+          <div className="md:hidden pt-4 pb-3 border-t border-gray-100 mt-3 animate-in slide-in-from-top duration-300">
             <div className="flex flex-col space-y-2">
               <Button 
                 variant="ghost" 
