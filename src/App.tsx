@@ -12,7 +12,7 @@ import About from "./pages/About";
 import { Toaster } from "@/components/ui/toaster";
 import { useEffect } from "react";
 import "./App.css";
-import { Helmet } from "react-helmet";
+import { HelmetProvider, Helmet } from "react-helmet-async";
 
 function App() {
   // Force scrollbar to be present to prevent layout shifts
@@ -41,7 +41,7 @@ function App() {
   }, []);
 
   return (
-    <>
+    <HelmetProvider>
       <Helmet>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <title>PlutoDev - Arctic Learning Zone</title>
@@ -60,7 +60,7 @@ function App() {
         </Routes>
         <Toaster />
       </Router>
-    </>
+    </HelmetProvider>
   );
 }
 

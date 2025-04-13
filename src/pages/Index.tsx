@@ -10,7 +10,7 @@ import CTASection from "@/components/home/CTASection";
 import Footer from "@/components/home/Footer";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 
 const Index = () => {
   const [showAgreement, setShowAgreement] = useState(false);
