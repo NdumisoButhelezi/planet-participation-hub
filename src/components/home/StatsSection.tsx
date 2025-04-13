@@ -20,7 +20,7 @@ const StatsSection = () => {
         {/* Impact image */}
         <div className="mb-12 text-center" data-aos="fade-up">
           <img 
-            src="https://i.ibb.co/Mnn7f2W/impact-image.jpg" 
+            src="https://i.ibb.co/HTRvkP5/Chat-GPT-Image-Apr-13-2025-04-08-19-PM.png" 
             alt="Our Impact" 
             className="max-w-full rounded-xl shadow-lg mx-auto"
           />
