@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, CheckCircle, XCircle, Clock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -67,7 +68,9 @@ const curriculumData: WeeklyTask[] = [
       "Add dynamic content with JavaScript",
       "Implement form validation",
       "Create basic event-driven UI interactions"
-    ]
+    ],
+    videoUrl: "https://www.youtube.com/embed/MCg9-mihmsI?si=T1OIArSfvhscJ3qz",
+    videoTitle: "Week 4: JavaScript Interactivity"
   },
   {
     week: 5,
