@@ -56,7 +56,14 @@ const Leaderboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader user={currentUser ?? { id: "", email: "", isAdmin: false, skillLevel: "beginner" }} />
+      <DashboardHeader user={currentUser ?? { 
+        id: "", 
+        email: "", 
+        isAdmin: false, 
+        skillLevel: "beginner" as const,
+        name: "",
+        hasAcceptedAgreement: false
+      }} />
       
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">

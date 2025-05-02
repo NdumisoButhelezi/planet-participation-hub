@@ -1,13 +1,23 @@
+
+export type SkillLevel = "beginner" | "intermediate" | "advanced";
+
 export interface User {
   id: string;
   email: string;
   name: string;
-  skillLevel: "beginner" | "intermediate" | "advanced";
+  skillLevel: SkillLevel;
   hasAcceptedAgreement: boolean;
   isAdmin: boolean;
   points?: number;
   progress?: number;
   registrationDate?: Date;
+  fullName?: string;
+  course?: string;
+  yearOfStudy?: string;
+  accountLocked?: boolean;
+  lockReason?: string;
+  studentNumber?: string;
+  motivation?: string;
 }
 
 export interface Submission {

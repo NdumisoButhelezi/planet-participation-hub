@@ -7,7 +7,7 @@ interface WelcomeSectionProps {
 }
 
 const WelcomeSection = ({ user }: WelcomeSectionProps) => {
-  const userName = user.fullName || user.email?.split('@')[0] || "Learner";
+  const userName = user.fullName || user.name || user.email?.split('@')[0] || "Learner";
   const timeOfDay = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "morning";
