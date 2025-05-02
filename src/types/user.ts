@@ -1,25 +1,12 @@
-export type SkillLevel = "beginner" | "intermediate" | "advanced";
-
 export interface User {
   id: string;
   email: string;
-  skillLevel: SkillLevel;
+  name: string;
+  skillLevel: "beginner" | "intermediate" | "advanced";
+  hasAcceptedAgreement: boolean;
   isAdmin: boolean;
-  hasAcceptedAgreement?: boolean;
-  progress?: number;
   points?: number;
-  fullName?: string;
-  studentNumber?: string;
-  phoneNumber?: string;
-  course?: string;
-  yearOfStudy?: string;
-  aiInterestArea?: string;
-  linkedinProfile?: string;
-  githubProfile?: string;
-  learningStyle?: "solo" | "teamwork" | "both";
-  motivation?: string;
-  accountLocked?: boolean;
-  lockReason?: string;
+  progress?: number;
   registrationDate?: Date;
 }
 
@@ -30,34 +17,31 @@ export interface Submission {
   content: string;
   projectLink: string;
   socialMediaLink: string;
-  learningReflection: string;
   peersEngaged: number;
+  learningReflection: string;
   status: "pending" | "approved" | "rejected";
-  createdAt: Date;
+  createdAt?: Date;
 }
 
-export interface Task {
-  id: string;
-  title: string;
-  description: string;
-  videoUrl: string;
-  skillLevel: SkillLevel;
-}
-
-export interface Playlist {
-  skillLevel: SkillLevel;
-  urls: string[];
-}
-
-export const PLAYLISTS: Record<SkillLevel, string[]> = {
+export const PLAYLISTS = {
   beginner: [
-    "https://youtube.com/playlist?list=PLnbRHHpYESGILKGfoOn-Bxlk9_O2izivX",
-    "https://youtube.com/playlist?list=PLnbRHHpYESGKa-tkA3Tr_A_xQiHDm0kaK"
+    "https://www.youtube.com/playlist?list=PLbVHz4urQBZm7_y0dxPfYC81mE3SqFRTr",
+    "https://www.youtube.com/playlist?list=PLbVHz4urQBZnSMFJ0rnyZZvF0RdDejBoz",
   ],
   intermediate: [
-    "https://youtube.com/playlist?list=PLnbRHHpYESGIKkP62ebY8fHnraAn4xf8J"
+    "https://www.youtube.com/playlist?list=PLbVHz4urQBZkkgRrXx9LMpFdHMgygHDj3",
+    "https://www.youtube.com/playlist?list=PLbVHz4urQBZlXa91KF-c8lYEx0L1OeKtG",
   ],
   advanced: [
-    "https://youtube.com/playlist?list=PLnbRHHpYESGJ2NNCMFdmTEzzSKfJQb-Rn"
+    "https://www.youtube.com/playlist?list=PLbVHz4urQBZmJnbDiZJZB0s7J7ffq9LLl",
+    "https://www.youtube.com/playlist?list=PLbVHz4urQBZln0BKln-IDIoiQokkJbFV3",
+  ],
+  // Authentication series available for all levels
+  authSeries: [
+    "https://youtu.be/SHFIuz0wrrE",
+    "https://youtu.be/spfIpRV_g80",
+    "https://youtu.be/Ln9zY8GM5kA",
+    "https://youtu.be/2rGkWojr8Fg",
+    "https://youtu.be/AKzBv9EnFew"
   ]
 };

@@ -5,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Play, CheckCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ReactNode } from "react";
 
 interface LearningPathCardProps {
   index: number;
   playlistUrl: string;
+  customTitle?: string;
+  customDescription?: string;
+  customIcon?: ReactNode;
   projectLink: string;
   socialMediaLink: string;
   peersEngaged: string;
@@ -23,6 +27,9 @@ interface LearningPathCardProps {
 const LearningPathCard = ({
   index,
   playlistUrl,
+  customTitle,
+  customDescription,
+  customIcon,
   projectLink,
   socialMediaLink,
   peersEngaged,
@@ -38,13 +45,24 @@ const LearningPathCard = ({
   const toggleVideoPreview = () => {
     setShowVideo(prev => !prev);
   };
+  
+  // Determine if this is a single video or a playlist
+  const isSingleVideo = !playlistUrl.includes('playlist');
+  
+  // Generate appropriate embed URL
+  const embedUrl = isSingleVideo
+    ? `https://www.youtube.com/embed/${playlistUrl.split('youtu.be/')[1]}`
+    : `${playlistUrl.replace('playlist?list=', 'embed/videoseries?list=')}`;
 
   return (
     <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
       <CardHeader className="space-y-1">
         <CardTitle className="text-xl font-semibold">
-          Learning Path {index + 1}
+          {customTitle || `Learning Path ${index + 1}`}
         </CardTitle>
+        {customDescription && (
+          <div className="text-sm text-gray-600">{customDescription}</div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <Button 
@@ -59,8 +77,8 @@ const LearningPathCard = ({
         {showVideo && (
           <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden animate-fade-in">
             <iframe
-              src={`${playlistUrl.replace('playlist?list=', 'embed/videoseries?list=')}`}
-              title={`Learning Path ${index + 1}`}
+              src={embedUrl}
+              title={customTitle || `Learning Path ${index + 1}`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               className="w-full h-full"
@@ -69,8 +87,8 @@ const LearningPathCard = ({
         )}
         
         <div className="flex items-center space-x-2 text-blue-600">
-          <Play className="h-5 w-5" />
-          <span>Watch Videos</span>
+          {customIcon || <Play className="h-5 w-5" />}
+          <span>Watch {isSingleVideo ? "Video" : "Playlist"}</span>
         </div>
         
         <div className="flex items-center space-x-2 text-green-600">
