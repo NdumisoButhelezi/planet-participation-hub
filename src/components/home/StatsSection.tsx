@@ -20,7 +20,7 @@ const StatsSection = () => {
         {/* Impact image */}
         <div className="mb-12 text-center" data-aos="fade-up">
           <img 
-            src="https://i.ibb.co/Pgbd7QT/anime-learning-stats.jpg" 
+            src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1169&q=80" 
             alt="Our Impact" 
             className="max-w-full rounded-xl shadow-lg mx-auto"
           />

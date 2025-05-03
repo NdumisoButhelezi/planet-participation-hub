@@ -55,7 +55,7 @@ const FeatureSection = () => {
         {/* Feature image */}
         <div className="mb-12 text-center" data-aos="fade-up">
           <img 
-            src="https://i.ibb.co/yYmZdvz/anime-tech-learning-ecosystem.jpg" 
+            src="https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80" 
             alt="Planet 09 AI Ecosystem" 
             className="max-w-full rounded-xl shadow-lg mx-auto"
           />

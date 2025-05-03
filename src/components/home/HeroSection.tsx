@@ -33,7 +33,7 @@ const HeroSection = ({ onShowAgreement }: HeroSectionProps) => {
     <section 
       className="pt-20 md:pt-32 pb-16 md:pb-20 px-4 text-white relative overflow-hidden"
       style={{
-        background: "linear-gradient(rgba(59, 130, 246, 0.85), rgba(37, 99, 235, 0.85)), url('https://i.ibb.co/qMRgFK1/anime-tech-learning.jpg') no-repeat center center",
+        background: "linear-gradient(rgba(59, 130, 246, 0.85), rgba(37, 99, 235, 0.85)), url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80') no-repeat center center",
         backgroundSize: "cover"
       }}
     >
