@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
-import { collection, getDocs, query, where, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, query, where, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { User, Submission } from "@/types/user";
 import { Event, Perspective } from "@/types/events";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ const Admin = () => {
   const [currentView, setCurrentView] = useState<'users' | 'events' | 'submissions' | 'registrations'>('users');
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [perspective, setPerspective] = useState<Perspective>("STEWARDSHIP");
   const [name, setName] = useState("");
@@ -115,6 +116,83 @@ const Admin = () => {
     setPerspectiveWeighting("");
   };
 
+  const handleEventSubmit = async () => {
+    try {
+      setIsSubmitting(true);
+      
+      // Form validation
+      if (!name || !date || targetGroup.length === 0 || !objectives || !outcome) {
+        toast({
+          title: "Missing fields",
+          description: "Please fill out all required fields",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const eventData: Omit<Event, "id"> = {
+        perspective,
+        name,
+        date,
+        targetGroup,
+        objectives,
+        outcome,
+        perspectiveWeighting: Number(perspectiveWeighting) || 0,
+      };
+
+      console.log("Submitting event:", eventData);
+
+      if (selectedEvent) {
+        // Update existing event
+        await updateDoc(doc(db, "events", selectedEvent.id), eventData);
+        toast({
+          title: "Success",
+          description: "Event updated successfully",
+        });
+      } else {
+        // Create new event
+        await addDoc(collection(db, "events"), eventData);
+        toast({
+          title: "Success",
+          description: "Event created successfully",
+        });
+      }
+
+      setShowEventForm(false);
+      resetEventForm();
+      
+    } catch (error) {
+      console.error("Failed to save event:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save event",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      console.log("Deleting event:", eventId);
+      await deleteDoc(doc(db, "events", eventId));
+      
+      toast({
+        title: "Success",
+        description: "Event deleted successfully",
+      });
+    } catch (error) {
+      console.error("Failed to delete event:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete event",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Add the renderContent function here before it's used
   const renderContent = () => {
     switch (currentView) {
@@ -130,7 +208,10 @@ const Admin = () => {
           <div className="bg-white/70 backdrop-blur-md rounded-lg shadow-lg ice-border p-4 space-y-6">
             <div className="flex justify-end mb-6">
               <Button 
-                onClick={() => setShowEventForm(true)}
+                onClick={() => {
+                  resetEventForm();
+                  setShowEventForm(true);
+                }}
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
                 size={isMobile ? "sm" : "default"}
               >
@@ -160,7 +241,7 @@ const Admin = () => {
                       setPerspectiveWeighting(event.perspectiveWeighting.toString());
                       setShowEventForm(true);
                     }}
-                    onDelete={() => {}}
+                    onDelete={handleDeleteEvent}
                     onRegister={() => {}}
                   />
                 ))}
@@ -277,7 +358,7 @@ const Admin = () => {
         open={showEventForm}
         onOpenChange={setShowEventForm}
         selectedEvent={selectedEvent}
-        onSubmit={async () => {}}
+        onSubmit={handleEventSubmit}
         perspective={perspective}
         setPerspective={setPerspective}
         name={name}

@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 interface EventFormProps {
   open: boolean;
@@ -48,6 +50,17 @@ const EventForm = ({
   perspectiveWeighting,
   setPerspectiveWeighting,
 }: EventFormProps) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await onSubmit();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -58,6 +71,7 @@ const EventForm = ({
           <Select
             value={perspective}
             onValueChange={(value) => setPerspective(value as Perspective)}
+            disabled={isSubmitting}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select perspective" />
@@ -74,12 +88,14 @@ const EventForm = ({
             placeholder="Event Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            disabled={isSubmitting}
           />
 
           <Input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
+            disabled={isSubmitting}
           />
 
           <div className="space-y-2">
@@ -95,6 +111,7 @@ const EventForm = ({
                       setTargetGroup(targetGroup.filter(g => g !== "Student"));
                     }
                   }}
+                  disabled={isSubmitting}
                 />
                 <span>Student</span>
               </div>
@@ -108,6 +125,7 @@ const EventForm = ({
                       setTargetGroup(targetGroup.filter(g => g !== "Staff"));
                     }
                   }}
+                  disabled={isSubmitting}
                 />
                 <span>Staff</span>
               </div>
@@ -118,12 +136,14 @@ const EventForm = ({
             placeholder="Objectives"
             value={objectives}
             onChange={(e) => setObjectives(e.target.value)}
+            disabled={isSubmitting}
           />
 
           <Textarea
             placeholder="Outcome"
             value={outcome}
             onChange={(e) => setOutcome(e.target.value)}
+            disabled={isSubmitting}
           />
 
           <Input
@@ -133,11 +153,19 @@ const EventForm = ({
             onChange={(e) => setPerspectiveWeighting(e.target.value)}
             min="0"
             max="100"
+            disabled={isSubmitting}
           />
         </div>
         <DialogFooter>
-          <Button onClick={onSubmit}>
-            {selectedEvent ? "Update Event" : "Create Event"}
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {selectedEvent ? "Updating..." : "Creating..."}
+              </>
+            ) : (
+              selectedEvent ? "Update Event" : "Create Event"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

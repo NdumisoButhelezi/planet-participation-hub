@@ -13,6 +13,17 @@ interface AdminActionsProps {
 
 const AdminActions = ({ event, onEdit, onDelete }: AdminActionsProps) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await onDelete(event.id);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
 
   return (
     <>
@@ -29,6 +40,7 @@ const AdminActions = ({ event, onEdit, onDelete }: AdminActionsProps) => {
         size="icon"
         onClick={() => setShowDeleteConfirm(true)}
         className="hover:bg-red-50"
+        disabled={isDeleting}
       >
         <Trash className="h-4 w-4 text-red-600" />
       </Button>
@@ -42,15 +54,13 @@ const AdminActions = ({ event, onEdit, onDelete }: AdminActionsProps) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 hover:bg-red-700"
-              onClick={() => {
-                onDelete(event.id);
-                setShowDeleteConfirm(false);
-              }}
+              onClick={handleDelete}
+              disabled={isDeleting}
             >
-              Delete
+              {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
