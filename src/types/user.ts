@@ -18,6 +18,8 @@ export interface User {
   lockReason?: string;
   studentNumber?: string;
   motivation?: string;
+  lastSubmissionDate?: Date | string;
+  lastPointsRestoreDate?: Date | string;
 }
 
 export interface Submission {

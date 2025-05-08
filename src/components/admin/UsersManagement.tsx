@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { User, SkillLevel } from "@/types/user";
-import { Shield, Trash2, Search, Filter, AlertTriangle } from "lucide-react";
+import { Shield, Trash2, Search, Filter, AlertTriangle, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { addWeeks, differenceInDays, parseISO } from "date-fns";
 
 interface UsersManagementProps {
   users: User[];
@@ -23,17 +24,31 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredUsers, setFilteredUsers] = useState<User[]>(users);
+  const [isRestoring, setIsRestoring] = useState<{[key: string]: boolean}>({});
   
   // Filter states
   const [selectedSkillLevel, setSelectedSkillLevel] = useState<SkillLevel | "all">("all");
   const [selectedRole, setSelectedRole] = useState<"all" | "admin" | "user">("all");
   const [selectedYearOfStudy, setSelectedYearOfStudy] = useState<string>("all");
   const [showLockedAccounts, setShowLockedAccounts] = useState<boolean>(false);
+  const [showInactiveUsers, setShowInactiveUsers] = useState<boolean>(false);
 
   const uniqueYearsOfStudy = [...new Set(users
     .filter(user => user.yearOfStudy)
     .map(user => user.yearOfStudy as string)
   )].sort();
+
+  // Function to check if a user is inactive (no submission for 2+ weeks)
+  const isUserInactive = (user: User) => {
+    const lastSubmissionDate = user.lastSubmissionDate ? 
+      (typeof user.lastSubmissionDate === 'string' ? parseISO(user.lastSubmissionDate) : user.lastSubmissionDate) : 
+      null;
+    
+    if (!lastSubmissionDate) return true; // No submission date means user is considered inactive
+    
+    const twoWeeksAgo = addWeeks(new Date(), -2);
+    return lastSubmissionDate < twoWeeksAgo;
+  };
 
   useEffect(() => {
     // Apply all filters
@@ -74,8 +89,13 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
       filtered = filtered.filter(user => user.accountLocked);
     }
     
+    // Apply inactive users filter
+    if (showInactiveUsers) {
+      filtered = filtered.filter(user => isUserInactive(user));
+    }
+    
     setFilteredUsers(filtered);
-  }, [searchQuery, users, selectedSkillLevel, selectedRole, selectedYearOfStudy, showLockedAccounts]);
+  }, [searchQuery, users, selectedSkillLevel, selectedRole, selectedYearOfStudy, showLockedAccounts, showInactiveUsers]);
 
   const makeAdmin = async (userId: string) => {
     try {
@@ -171,6 +191,44 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
     setSelectedRole("all");
     setSelectedYearOfStudy("all");
     setShowLockedAccounts(false);
+    setShowInactiveUsers(false);
+  };
+
+  const restoreUserPoints = async (user: User) => {
+    setIsRestoring(prev => ({ ...prev, [user.id]: true }));
+    try {
+      // Default points to restore - could be made configurable
+      const pointsToRestore = 100;
+      
+      const currentPoints = user.points || 0;
+      const newPoints = currentPoints + pointsToRestore;
+      
+      // Update user in Firestore
+      await updateDoc(doc(db, "users", user.id), {
+        points: newPoints,
+        lastPointsRestoreDate: new Date()
+      });
+      
+      // Update local state
+      const updatedUsers = users.map(u => 
+        u.id === user.id ? { ...u, points: newPoints, lastPointsRestoreDate: new Date() } : u
+      );
+      onUserUpdate(updatedUsers);
+      
+      toast({
+        title: "Points Restored",
+        description: `Successfully restored ${pointsToRestore} points to ${user.fullName || user.email}.`,
+      });
+    } catch (error) {
+      console.error("Error restoring points:", error);
+      toast({
+        title: "Error",
+        description: "Failed to restore user points",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRestoring(prev => ({ ...prev, [user.id]: false }));
+    }
   };
 
   return (
@@ -255,6 +313,18 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                   Show locked accounts
                 </label>
               </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="inactive-users"
+                  checked={showInactiveUsers}
+                  onChange={(e) => setShowInactiveUsers(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 mr-2"
+                />
+                <label htmlFor="inactive-users" className="text-sm font-medium text-gray-700">
+                  Show inactive users (2+ weeks)
+                </label>
+              </div>
               <Button
                 variant="outline"
                 onClick={resetFilters}
@@ -278,10 +348,16 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
             )}
             
             <div className="space-y-4">
-              {filteredUsers.map(user => (
+              {filteredUsers.map(user => {
+                const isInactive = isUserInactive(user);
+                return (
                 <div 
                   key={user.id} 
-                  className={`flex items-center justify-between p-4 rounded-lg ${user.accountLocked ? 'bg-red-50 border border-red-200' : 'bg-gray-50'}`}
+                  className={`flex items-center justify-between p-4 rounded-lg ${
+                    user.accountLocked ? 'bg-red-50 border border-red-200' : 
+                    isInactive ? 'bg-yellow-50 border border-yellow-200' :
+                    'bg-gray-50'
+                  }`}
                 >
                   <div>
                     <div className="flex items-center gap-2">
@@ -292,9 +368,16 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                           Locked
                         </Badge>
                       )}
+                      {isInactive && (
+                        <Badge variant="outline" className="flex items-center gap-1 bg-yellow-100 text-yellow-800">
+                          <Clock className="h-3 w-3" />
+                          Inactive
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-gray-600">
                       {user.skillLevel} • {user.isAdmin ? "Admin" : "User"}
+                      {user.points !== undefined && ` • ${user.points} points`}
                     </p>
                     {user.fullName && (
                       <p className="text-sm text-gray-600">{user.fullName}</p>
@@ -314,7 +397,17 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                       </p>
                     )}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap justify-end">
+                    {isInactive && !user.isAdmin && (
+                      <Button 
+                        variant="outline"
+                        onClick={() => restoreUserPoints(user)}
+                        disabled={isRestoring[user.id]}
+                        className="flex items-center gap-2 bg-yellow-50 text-yellow-800 border-yellow-300 hover:bg-yellow-100"
+                      >
+                        {isRestoring[user.id] ? "Restoring..." : "Restore Points"}
+                      </Button>
+                    )}
                     <Button 
                       variant={user.accountLocked ? "default" : "outline"}
                       onClick={() => toggleLockAccount(user)}
@@ -342,7 +435,7 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                     </Button>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
         </CardContent>
