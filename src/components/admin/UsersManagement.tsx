@@ -1,16 +1,19 @@
 
 import { useState, useEffect } from "react";
 import { User, SkillLevel } from "@/types/user";
-import { Shield, Trash2, Search, Filter, AlertTriangle, Clock } from "lucide-react";
+import { Shield, Trash2, Search, Filter, AlertTriangle, Clock, Plus, Minus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { doc, updateDoc, deleteDoc, setDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { addWeeks, differenceInDays, parseISO } from "date-fns";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface UsersManagementProps {
   users: User[];
@@ -25,6 +28,13 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredUsers, setFilteredUsers] = useState<User[]>(users);
   const [isRestoring, setIsRestoring] = useState<{[key: string]: boolean}>({});
+  
+  // Points adjustment state
+  const [isAdjustingPoints, setIsAdjustingPoints] = useState(false);
+  const [userToAdjust, setUserToAdjust] = useState<User | null>(null);
+  const [pointsToAdjust, setPointsToAdjust] = useState<string>("");
+  const [pointsAdjustmentReason, setPointsAdjustmentReason] = useState<string>("");
+  const [pointsHistory, setPointsHistory] = useState<{[key: string]: { amount: number, reason: string, date: Date }[]}>({});
   
   // Filter states
   const [selectedSkillLevel, setSelectedSkillLevel] = useState<SkillLevel | "all">("all");
@@ -215,6 +225,18 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
       );
       onUserUpdate(updatedUsers);
       
+      // Add to points history
+      const historyItem = {
+        amount: pointsToRestore,
+        reason: "Points restored due to inactivity",
+        date: new Date()
+      };
+      
+      setPointsHistory(prev => ({
+        ...prev,
+        [user.id]: [...(prev[user.id] || []), historyItem]
+      }));
+      
       toast({
         title: "Points Restored",
         description: `Successfully restored ${pointsToRestore} points to ${user.fullName || user.email}.`,
@@ -228,6 +250,94 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
       });
     } finally {
       setIsRestoring(prev => ({ ...prev, [user.id]: false }));
+    }
+  };
+
+  const openPointsAdjustmentDialog = (user: User) => {
+    setUserToAdjust(user);
+    setPointsToAdjust("");
+    setPointsAdjustmentReason("");
+    setIsAdjustingPoints(true);
+  };
+
+  const handlePointsAdjustment = async () => {
+    if (!userToAdjust) return;
+    
+    try {
+      const adjustmentAmount = parseInt(pointsToAdjust);
+      if (isNaN(adjustmentAmount)) {
+        toast({
+          title: "Invalid Points",
+          description: "Please enter a valid number for points.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (!pointsAdjustmentReason.trim()) {
+        toast({
+          title: "Reason Required",
+          description: "Please provide a reason for this adjustment.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const currentPoints = userToAdjust.points || 0;
+      const newPoints = currentPoints + adjustmentAmount;
+      
+      // Don't allow negative total points
+      if (newPoints < 0) {
+        toast({
+          title: "Invalid Adjustment",
+          description: "Total points cannot be negative.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update user in Firestore
+      await updateDoc(doc(db, "users", userToAdjust.id), {
+        points: newPoints,
+        lastPointsAdjustmentDate: new Date()
+      });
+      
+      // Update local state
+      const updatedUsers = users.map(u => 
+        u.id === userToAdjust.id ? { 
+          ...u, 
+          points: newPoints, 
+          lastPointsAdjustmentDate: new Date() 
+        } : u
+      );
+      onUserUpdate(updatedUsers);
+      
+      // Add to points history
+      const historyItem = {
+        amount: adjustmentAmount,
+        reason: pointsAdjustmentReason,
+        date: new Date()
+      };
+      
+      setPointsHistory(prev => ({
+        ...prev,
+        [userToAdjust.id]: [...(prev[userToAdjust.id] || []), historyItem]
+      }));
+      
+      toast({
+        title: "Points Adjusted",
+        description: `Successfully ${adjustmentAmount >= 0 ? 'added' : 'deducted'} ${Math.abs(adjustmentAmount)} points ${adjustmentAmount >= 0 ? 'to' : 'from'} ${userToAdjust.fullName || userToAdjust.email}.`,
+      });
+      
+      // Close dialog
+      setIsAdjustingPoints(false);
+    } catch (error) {
+      console.error("Error adjusting points:", error);
+      toast({
+        title: "Error",
+        description: "Failed to adjust user points",
+        variant: "destructive",
+      });
     }
   };
 
@@ -377,7 +487,11 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                     </div>
                     <p className="text-sm text-gray-600">
                       {user.skillLevel} • {user.isAdmin ? "Admin" : "User"}
-                      {user.points !== undefined && ` • ${user.points} points`}
+                      {user.points !== undefined && (
+                        <span className="ml-1 font-medium">
+                          • {user.points} points
+                        </span>
+                      )}
                     </p>
                     {user.fullName && (
                       <p className="text-sm text-gray-600">{user.fullName}</p>
@@ -398,6 +512,16 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                     )}
                   </div>
                   <div className="flex gap-2 flex-wrap justify-end">
+                    <Button 
+                      variant="outline"
+                      onClick={() => openPointsAdjustmentDialog(user)}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <Minus className="h-4 w-4" />
+                      Adjust Points
+                    </Button>
+                    
                     {isInactive && !user.isAdmin && (
                       <Button 
                         variant="outline"
@@ -440,6 +564,83 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Points Adjustment Dialog */}
+      <Dialog open={isAdjustingPoints} onOpenChange={setIsAdjustingPoints}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adjust User Points</DialogTitle>
+            <DialogDescription>
+              {userToAdjust?.fullName || userToAdjust?.email} current points: {userToAdjust?.points || 0}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <FormLabel htmlFor="points">Points to Adjust</FormLabel>
+              <div className="flex items-center">
+                <Input
+                  id="points"
+                  type="number"
+                  value={pointsToAdjust}
+                  onChange={(e) => setPointsToAdjust(e.target.value)}
+                  placeholder="Enter positive or negative value"
+                  className="flex-1"
+                />
+              </div>
+              <FormDescription>
+                Use positive numbers to add points, negative to deduct.
+              </FormDescription>
+            </div>
+            
+            <div className="space-y-2">
+              <FormLabel htmlFor="reason">Reason</FormLabel>
+              <Textarea
+                id="reason"
+                value={pointsAdjustmentReason}
+                onChange={(e) => setPointsAdjustmentReason(e.target.value)}
+                placeholder="Reason for adjustment"
+                className="min-h-[80px]"
+              />
+            </div>
+            
+            {pointsHistory[userToAdjust?.id || ""] && pointsHistory[userToAdjust?.id || ""].length > 0 && (
+              <div className="space-y-2 mt-4">
+                <h4 className="text-sm font-medium">Recent Adjustments</h4>
+                <div className="border rounded-md overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Reason</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pointsHistory[userToAdjust?.id || ""].slice(-3).map((item, i) => (
+                        <TableRow key={i}>
+                          <TableCell>{item.date.toLocaleDateString()}</TableCell>
+                          <TableCell className={item.amount >= 0 ? "text-green-600" : "text-red-600"}>
+                            {item.amount >= 0 ? `+${item.amount}` : item.amount}
+                          </TableCell>
+                          <TableCell className="max-w-[150px] truncate">{item.reason}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAdjustingPoints(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handlePointsAdjustment}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>

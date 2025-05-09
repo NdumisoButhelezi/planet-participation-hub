@@ -20,6 +20,7 @@ export interface User {
   motivation?: string;
   lastSubmissionDate?: Date | string;
   lastPointsRestoreDate?: Date | string;
+  lastPointsAdjustmentDate?: Date | string;
 }
 
 export interface Submission {
