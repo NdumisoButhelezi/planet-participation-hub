@@ -14,11 +14,22 @@ import { addWeeks, differenceInDays, parseISO } from "date-fns";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 interface UsersManagementProps {
   users: User[];
   onUserUpdate: (updatedUsers: User[]) => void;
 }
+
+// Create a schema for points adjustment
+const pointsAdjustmentSchema = z.object({
+  points: z.string().refine((val) => !isNaN(Number(val)), {
+    message: "Points must be a valid number",
+  }),
+  reason: z.string().min(1, { message: "Reason is required" }),
+});
 
 const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
   const { toast } = useToast();
@@ -32,9 +43,16 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
   // Points adjustment state
   const [isAdjustingPoints, setIsAdjustingPoints] = useState(false);
   const [userToAdjust, setUserToAdjust] = useState<User | null>(null);
-  const [pointsToAdjust, setPointsToAdjust] = useState<string>("");
-  const [pointsAdjustmentReason, setPointsAdjustmentReason] = useState<string>("");
   const [pointsHistory, setPointsHistory] = useState<{[key: string]: { amount: number, reason: string, date: Date }[]}>({});
+  
+  // Form for points adjustment
+  const pointsAdjustmentForm = useForm<z.infer<typeof pointsAdjustmentSchema>>({
+    resolver: zodResolver(pointsAdjustmentSchema),
+    defaultValues: {
+      points: "",
+      reason: "",
+    },
+  });
   
   // Filter states
   const [selectedSkillLevel, setSelectedSkillLevel] = useState<SkillLevel | "all">("all");
@@ -255,29 +273,22 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
 
   const openPointsAdjustmentDialog = (user: User) => {
     setUserToAdjust(user);
-    setPointsToAdjust("");
-    setPointsAdjustmentReason("");
+    pointsAdjustmentForm.reset({
+      points: "",
+      reason: "",
+    });
     setIsAdjustingPoints(true);
   };
 
-  const handlePointsAdjustment = async () => {
+  const handlePointsAdjustment = async (data: z.infer<typeof pointsAdjustmentSchema>) => {
     if (!userToAdjust) return;
     
     try {
-      const adjustmentAmount = parseInt(pointsToAdjust);
+      const adjustmentAmount = parseInt(data.points);
       if (isNaN(adjustmentAmount)) {
         toast({
           title: "Invalid Points",
           description: "Please enter a valid number for points.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (!pointsAdjustmentReason.trim()) {
-        toast({
-          title: "Reason Required",
-          description: "Please provide a reason for this adjustment.",
           variant: "destructive",
         });
         return;
@@ -315,7 +326,7 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
       // Add to points history
       const historyItem = {
         amount: adjustmentAmount,
-        reason: pointsAdjustmentReason,
+        reason: data.reason,
         date: new Date()
       };
       
@@ -565,7 +576,7 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
         </CardContent>
       </Card>
 
-      {/* Points Adjustment Dialog */}
+      {/* Points Adjustment Dialog - Properly wrapped with Form component */}
       <Dialog open={isAdjustingPoints} onOpenChange={setIsAdjustingPoints}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -574,71 +585,86 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
               {userToAdjust?.fullName || userToAdjust?.email} current points: {userToAdjust?.points || 0}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <FormLabel htmlFor="points">Points to Adjust</FormLabel>
-              <div className="flex items-center">
-                <Input
-                  id="points"
-                  type="number"
-                  value={pointsToAdjust}
-                  onChange={(e) => setPointsToAdjust(e.target.value)}
-                  placeholder="Enter positive or negative value"
-                  className="flex-1"
-                />
-              </div>
-              <FormDescription>
-                Use positive numbers to add points, negative to deduct.
-              </FormDescription>
-            </div>
-            
-            <div className="space-y-2">
-              <FormLabel htmlFor="reason">Reason</FormLabel>
-              <Textarea
-                id="reason"
-                value={pointsAdjustmentReason}
-                onChange={(e) => setPointsAdjustmentReason(e.target.value)}
-                placeholder="Reason for adjustment"
-                className="min-h-[80px]"
+          
+          <Form {...pointsAdjustmentForm}>
+            <form onSubmit={pointsAdjustmentForm.handleSubmit(handlePointsAdjustment)} className="space-y-4 py-4">
+              <FormField
+                control={pointsAdjustmentForm.control}
+                name="points"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Points to Adjust</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number" 
+                        placeholder="Enter positive or negative value"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Use positive numbers to add points, negative to deduct.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            
-            {pointsHistory[userToAdjust?.id || ""] && pointsHistory[userToAdjust?.id || ""].length > 0 && (
-              <div className="space-y-2 mt-4">
-                <h4 className="text-sm font-medium">Recent Adjustments</h4>
-                <div className="border rounded-md overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Reason</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pointsHistory[userToAdjust?.id || ""].slice(-3).map((item, i) => (
-                        <TableRow key={i}>
-                          <TableCell>{item.date.toLocaleDateString()}</TableCell>
-                          <TableCell className={item.amount >= 0 ? "text-green-600" : "text-red-600"}>
-                            {item.amount >= 0 ? `+${item.amount}` : item.amount}
-                          </TableCell>
-                          <TableCell className="max-w-[150px] truncate">{item.reason}</TableCell>
+              
+              <FormField
+                control={pointsAdjustmentForm.control}
+                name="reason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reason</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Reason for adjustment"
+                        className="min-h-[80px]"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {pointsHistory[userToAdjust?.id || ""] && pointsHistory[userToAdjust?.id || ""].length > 0 && (
+                <div className="space-y-2 mt-4">
+                  <h4 className="text-sm font-medium">Recent Adjustments</h4>
+                  <div className="border rounded-md overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Reason</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {pointsHistory[userToAdjust?.id || ""].slice(-3).map((item, i) => (
+                          <TableRow key={i}>
+                            <TableCell>{item.date.toLocaleDateString()}</TableCell>
+                            <TableCell className={item.amount >= 0 ? "text-green-600" : "text-red-600"}>
+                              {item.amount >= 0 ? `+${item.amount}` : item.amount}
+                            </TableCell>
+                            <TableCell className="max-w-[150px] truncate">{item.reason}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAdjustingPoints(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handlePointsAdjustment}>
-              Save Changes
-            </Button>
-          </DialogFooter>
+              )}
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsAdjustingPoints(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
@@ -676,3 +702,4 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
 };
 
 export default UsersManagement;
+
