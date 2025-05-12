@@ -21,6 +21,8 @@ export interface User {
   lastSubmissionDate?: Date | string;
   lastPointsRestoreDate?: Date | string;
   lastPointsAdjustmentDate?: Date | string;
+  submissionTimeExtension?: number; // Number of additional days granted
+  lastTimeExtensionDate?: Date | string;
 }
 
 export interface Submission {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { User, SkillLevel } from "@/types/user";
 import { Shield, Trash2, Search, Filter, AlertTriangle, Clock, Plus, Minus } from "lucide-react";
@@ -10,7 +9,7 @@ import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { addWeeks, differenceInDays, parseISO } from "date-fns";
+import { addWeeks, differenceInDays, parseISO, addDays, format } from "date-fns";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -31,6 +30,14 @@ const pointsAdjustmentSchema = z.object({
   reason: z.string().min(1, { message: "Reason is required" }),
 });
 
+// Create a schema for time extension
+const timeExtensionSchema = z.object({
+  days: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+    message: "Days must be a positive number",
+  }),
+  reason: z.string().min(1, { message: "Reason is required" }),
+});
+
 const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
   const { toast } = useToast();
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
@@ -45,6 +52,11 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
   const [userToAdjust, setUserToAdjust] = useState<User | null>(null);
   const [pointsHistory, setPointsHistory] = useState<{[key: string]: { amount: number, reason: string, date: Date }[]}>({});
   
+  // Time extension state
+  const [isExtendingTime, setIsExtendingTime] = useState(false);
+  const [userToExtend, setUserToExtend] = useState<User | null>(null);
+  const [extensionHistory, setExtensionHistory] = useState<{[key: string]: { days: number, reason: string, date: Date }[]}>({});
+  
   // Form for points adjustment
   const pointsAdjustmentForm = useForm<z.infer<typeof pointsAdjustmentSchema>>({
     resolver: zodResolver(pointsAdjustmentSchema),
@@ -54,12 +66,22 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
     },
   });
   
+  // Form for time extension
+  const timeExtensionForm = useForm<z.infer<typeof timeExtensionSchema>>({
+    resolver: zodResolver(timeExtensionSchema),
+    defaultValues: {
+      days: "14",
+      reason: "High performance extension",
+    },
+  });
+  
   // Filter states
   const [selectedSkillLevel, setSelectedSkillLevel] = useState<SkillLevel | "all">("all");
   const [selectedRole, setSelectedRole] = useState<"all" | "admin" | "user">("all");
   const [selectedYearOfStudy, setSelectedYearOfStudy] = useState<string>("all");
   const [showLockedAccounts, setShowLockedAccounts] = useState<boolean>(false);
   const [showInactiveUsers, setShowInactiveUsers] = useState<boolean>(false);
+  const [showEligibleForExtension, setShowEligibleForExtension] = useState<boolean>(false);
 
   const uniqueYearsOfStudy = [...new Set(users
     .filter(user => user.yearOfStudy)
@@ -76,6 +98,11 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
     
     const twoWeeksAgo = addWeeks(new Date(), -2);
     return lastSubmissionDate < twoWeeksAgo;
+  };
+
+  // Function to check if a user is eligible for time extension (points > 200)
+  const isEligibleForExtension = (user: User) => {
+    return (user.points || 0) > 200;
   };
 
   useEffect(() => {
@@ -122,8 +149,13 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
       filtered = filtered.filter(user => isUserInactive(user));
     }
     
+    // Apply eligible for extension filter
+    if (showEligibleForExtension) {
+      filtered = filtered.filter(user => isEligibleForExtension(user));
+    }
+    
     setFilteredUsers(filtered);
-  }, [searchQuery, users, selectedSkillLevel, selectedRole, selectedYearOfStudy, showLockedAccounts, showInactiveUsers]);
+  }, [searchQuery, users, selectedSkillLevel, selectedRole, selectedYearOfStudy, showLockedAccounts, showInactiveUsers, showEligibleForExtension]);
 
   const makeAdmin = async (userId: string) => {
     try {
@@ -220,6 +252,7 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
     setSelectedYearOfStudy("all");
     setShowLockedAccounts(false);
     setShowInactiveUsers(false);
+    setShowEligibleForExtension(false);
   };
 
   const restoreUserPoints = async (user: User) => {
@@ -352,6 +385,106 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
     }
   };
 
+  // New function to open the time extension dialog
+  const openTimeExtensionDialog = (user: User) => {
+    if (!isEligibleForExtension(user)) {
+      toast({
+        title: "Not Eligible",
+        description: "Only users with more than 200 points are eligible for time extension.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setUserToExtend(user);
+    timeExtensionForm.reset({
+      days: "14",
+      reason: "High performance extension",
+    });
+    setIsExtendingTime(true);
+  };
+
+  // New function to handle time extension
+  const handleTimeExtension = async (data: z.infer<typeof timeExtensionSchema>) => {
+    if (!userToExtend) return;
+    
+    try {
+      const extensionDays = parseInt(data.days);
+      if (isNaN(extensionDays) || extensionDays <= 0) {
+        toast({
+          title: "Invalid Days",
+          description: "Please enter a positive number for days.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Calculate the current extension and add new days
+      const currentExtension = userToExtend.submissionTimeExtension || 0;
+      const newExtension = currentExtension + extensionDays;
+      
+      // Update user in Firestore
+      await updateDoc(doc(db, "users", userToExtend.id), {
+        submissionTimeExtension: newExtension,
+        lastTimeExtensionDate: new Date()
+      });
+      
+      // Update local state
+      const updatedUsers = users.map(u => 
+        u.id === userToExtend.id ? { 
+          ...u, 
+          submissionTimeExtension: newExtension, 
+          lastTimeExtensionDate: new Date() 
+        } : u
+      );
+      onUserUpdate(updatedUsers);
+      
+      // Add to extension history
+      const historyItem = {
+        days: extensionDays,
+        reason: data.reason,
+        date: new Date()
+      };
+      
+      setExtensionHistory(prev => ({
+        ...prev,
+        [userToExtend.id]: [...(prev[userToExtend.id] || []), historyItem]
+      }));
+      
+      toast({
+        title: "Time Extended",
+        description: `Successfully extended submission deadline by ${extensionDays} days for ${userToExtend.fullName || userToExtend.email}.`,
+      });
+      
+      // Close dialog
+      setIsExtendingTime(false);
+    } catch (error) {
+      console.error("Error extending time:", error);
+      toast({
+        title: "Error",
+        description: "Failed to extend user's submission time",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Format the extended time information for display
+  const formatExtendedTime = (user: User) => {
+    if (!user.submissionTimeExtension) return null;
+    
+    const extensionDays = user.submissionTimeExtension;
+    const lastExtensionDate = user.lastTimeExtensionDate ? 
+      (typeof user.lastTimeExtensionDate === 'string' ? parseISO(user.lastTimeExtensionDate) : user.lastTimeExtensionDate) : 
+      null;
+    
+    if (lastExtensionDate) {
+      const newDeadline = addDays(lastExtensionDate, extensionDays);
+      return `+${extensionDays} days (until ${format(newDeadline, 'MMM d, yyyy')})`;
+    } else {
+      return `+${extensionDays} days`;
+    }
+  };
+
   return (
     <>
       <Card className="bg-white">
@@ -446,6 +579,18 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                   Show inactive users (2+ weeks)
                 </label>
               </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="eligible-extension"
+                  checked={showEligibleForExtension}
+                  onChange={(e) => setShowEligibleForExtension(e.target.checked)}
+                  className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 mr-2"
+                />
+                <label htmlFor="eligible-extension" className="text-sm font-medium text-gray-700">
+                  Show eligible for extension (>200 points)
+                </label>
+              </div>
               <Button
                 variant="outline"
                 onClick={resetFilters}
@@ -471,12 +616,14 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
             <div className="space-y-4">
               {filteredUsers.map(user => {
                 const isInactive = isUserInactive(user);
+                const canGetExtension = isEligibleForExtension(user);
                 return (
                 <div 
                   key={user.id} 
                   className={`flex items-center justify-between p-4 rounded-lg ${
                     user.accountLocked ? 'bg-red-50 border border-red-200' : 
                     isInactive ? 'bg-yellow-50 border border-yellow-200' :
+                    canGetExtension ? 'bg-green-50 border border-green-200' :
                     'bg-gray-50'
                   }`}
                 >
@@ -495,6 +642,12 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                           Inactive
                         </Badge>
                       )}
+                      {canGetExtension && (
+                        <Badge variant="outline" className="flex items-center gap-1 bg-green-100 text-green-800">
+                          <Clock className="h-3 w-3" />
+                          Eligible for Extension
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-gray-600">
                       {user.skillLevel} • {user.isAdmin ? "Admin" : "User"}
@@ -504,6 +657,11 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                         </span>
                       )}
                     </p>
+                    {user.submissionTimeExtension && (
+                      <p className="text-sm text-green-600 font-medium">
+                        Time Extension: {formatExtendedTime(user)}
+                      </p>
+                    )}
                     {user.fullName && (
                       <p className="text-sm text-gray-600">{user.fullName}</p>
                     )}
@@ -532,6 +690,17 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                       <Minus className="h-4 w-4" />
                       Adjust Points
                     </Button>
+                    
+                    {canGetExtension && (
+                      <Button 
+                        variant="outline"
+                        onClick={() => openTimeExtensionDialog(user)}
+                        className="flex items-center gap-2 bg-green-50 text-green-800 border-green-300 hover:bg-green-100"
+                      >
+                        <Clock className="h-4 w-4" />
+                        Extend Time
+                      </Button>
+                    )}
                     
                     {isInactive && !user.isAdmin && (
                       <Button 
@@ -576,7 +745,7 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
         </CardContent>
       </Card>
 
-      {/* Points Adjustment Dialog - Properly wrapped with Form component */}
+      {/* Points Adjustment Dialog */}
       <Dialog open={isAdjustingPoints} onOpenChange={setIsAdjustingPoints}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -668,6 +837,103 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
         </DialogContent>
       </Dialog>
 
+      {/* Time Extension Dialog */}
+      <Dialog open={isExtendingTime} onOpenChange={setIsExtendingTime}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Extend Submission Time</DialogTitle>
+            <DialogDescription>
+              {userToExtend?.fullName || userToExtend?.email} - Current points: {userToExtend?.points || 0}
+              {userToExtend?.submissionTimeExtension && (
+                <div className="mt-1 text-green-600 font-medium">
+                  Current extension: {userToExtend.submissionTimeExtension} days
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...timeExtensionForm}>
+            <form onSubmit={timeExtensionForm.handleSubmit(handleTimeExtension)} className="space-y-4 py-4">
+              <FormField
+                control={timeExtensionForm.control}
+                name="days"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Days to Extend</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="number" 
+                        placeholder="Enter number of days"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      How many additional days to extend the submission deadline.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={timeExtensionForm.control}
+                name="reason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reason</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Reason for extension"
+                        className="min-h-[80px]"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {extensionHistory[userToExtend?.id || ""] && extensionHistory[userToExtend?.id || ""].length > 0 && (
+                <div className="space-y-2 mt-4">
+                  <h4 className="text-sm font-medium">Recent Extensions</h4>
+                  <div className="border rounded-md overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Days</TableHead>
+                          <TableHead>Reason</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {extensionHistory[userToExtend?.id || ""].slice(-3).map((item, i) => (
+                          <TableRow key={i}>
+                            <TableCell>{item.date.toLocaleDateString()}</TableCell>
+                            <TableCell className="text-green-600">
+                              +{item.days}
+                            </TableCell>
+                            <TableCell className="max-w-[150px] truncate">{item.reason}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+              
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsExtendingTime(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Extend Time
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -702,4 +968,3 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
 };
 
 export default UsersManagement;
-
