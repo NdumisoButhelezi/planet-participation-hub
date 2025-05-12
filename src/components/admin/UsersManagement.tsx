@@ -588,7 +588,7 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                   className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 mr-2"
                 />
                 <label htmlFor="eligible-extension" className="text-sm font-medium text-gray-700">
-                  Show eligible for extension (>200 points)
+                  Show eligible for extension ({">"}200 points)
                 </label>
               </div>
               <Button
