@@ -9,7 +9,7 @@ import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { addWeeks, differenceInDays, parseISO, addDays, format } from "date-fns";
+import { addWeeks, differenceInDays, parseISO, addDays, format, isValid } from "date-fns";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -88,13 +88,29 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
     .map(user => user.yearOfStudy as string)
   )].sort();
 
+  // Function to safely parse a date
+  const safeParseDateFromFirestore = (dateValue: Date | string | null | undefined): Date | null => {
+    if (!dateValue) return null;
+    
+    if (typeof dateValue === 'string') {
+      try {
+        const parsedDate = parseISO(dateValue);
+        return isValid(parsedDate) ? parsedDate : null;
+      } catch (error) {
+        console.error("Error parsing date:", error);
+        return null;
+      }
+    }
+    
+    // Handle Firebase timestamps or Date objects
+    return dateValue instanceof Date && isValid(dateValue) ? dateValue : null;
+  };
+
   // Function to check if a user is inactive (no submission for 2+ weeks)
   const isUserInactive = (user: User) => {
-    const lastSubmissionDate = user.lastSubmissionDate ? 
-      (typeof user.lastSubmissionDate === 'string' ? parseISO(user.lastSubmissionDate) : user.lastSubmissionDate) : 
-      null;
+    const lastSubmissionDate = safeParseDateFromFirestore(user.lastSubmissionDate);
     
-    if (!lastSubmissionDate) return true; // No submission date means user is considered inactive
+    if (!lastSubmissionDate) return true; // No valid submission date means user is considered inactive
     
     const twoWeeksAgo = addWeeks(new Date(), -2);
     return lastSubmissionDate < twoWeeksAgo;
@@ -264,6 +280,16 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
       const currentPoints = user.points || 0;
       const newPoints = currentPoints + pointsToRestore;
       
+      // Don't allow negative total points
+      if (newPoints < 0) {
+        toast({
+          title: "Invalid Adjustment",
+          description: "Total points cannot be negative.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       // Update user in Firestore
       await updateDoc(doc(db, "users", user.id), {
         points: newPoints,
@@ -272,7 +298,11 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
       
       // Update local state
       const updatedUsers = users.map(u => 
-        u.id === user.id ? { ...u, points: newPoints, lastPointsRestoreDate: new Date() } : u
+        u.id === user.id ? { 
+          ...u, 
+          points: newPoints, 
+          lastPointsRestoreDate: new Date() 
+        } : u
       );
       onUserUpdate(updatedUsers);
       
@@ -468,18 +498,23 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
     }
   };
 
-  // Format the extended time information for display
+  // Format the extended time information for display with safer date handling
   const formatExtendedTime = (user: User) => {
     if (!user.submissionTimeExtension) return null;
     
     const extensionDays = user.submissionTimeExtension;
-    const lastExtensionDate = user.lastTimeExtensionDate ? 
-      (typeof user.lastTimeExtensionDate === 'string' ? parseISO(user.lastTimeExtensionDate) : user.lastTimeExtensionDate) : 
-      null;
+    const lastExtensionDate = safeParseDateFromFirestore(user.lastTimeExtensionDate);
     
     if (lastExtensionDate) {
-      const newDeadline = addDays(lastExtensionDate, extensionDays);
-      return `+${extensionDays} days (until ${format(newDeadline, 'MMM d, yyyy')})`;
+      try {
+        const newDeadline = addDays(lastExtensionDate, extensionDays);
+        if (isValid(newDeadline)) {
+          return `+${extensionDays} days (until ${format(newDeadline, 'MMM d, yyyy')})`;
+        }
+      } catch (error) {
+        console.error("Error calculating extension deadline:", error);
+      }
+      return `+${extensionDays} days`;
     } else {
       return `+${extensionDays} days`;
     }

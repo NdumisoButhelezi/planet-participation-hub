@@ -1,5 +1,5 @@
 
-import { addWeeks, format, isAfter, isBefore, isEqual, startOfDay } from "date-fns";
+import { addWeeks, format, isAfter, isBefore, isEqual, startOfDay, isValid, parseISO } from "date-fns";
 
 export interface WeeklySchedule {
   startDate: Date;
@@ -13,11 +13,36 @@ export interface WeeklySchedule {
 }
 
 /**
+ * Safely parses a date value that could be a Date object or string
+ */
+export function safeParseDateValue(dateValue: Date | string | null | undefined): Date | null {
+  if (!dateValue) return null;
+  
+  if (typeof dateValue === 'string') {
+    try {
+      const parsedDate = parseISO(dateValue);
+      return isValid(parsedDate) ? parsedDate : null;
+    } catch (error) {
+      console.error("Error parsing date string:", error);
+      return null;
+    }
+  }
+  
+  return dateValue instanceof Date && isValid(dateValue) ? dateValue : null;
+}
+
+/**
  * Calculates a user's 8-week program schedule based on registration date
  */
-export function calculateProgramSchedule(registrationDate: Date): WeeklySchedule {
+export function calculateProgramSchedule(registrationDate: Date | string): WeeklySchedule {
+  // Ensure we have a valid date to work with
+  const validDate = safeParseDateValue(registrationDate);
+  if (!validDate) {
+    throw new Error('Invalid registration date provided');
+  }
+  
   const today = startOfDay(new Date());
-  const startDate = startOfDay(registrationDate);
+  const startDate = startOfDay(validDate);
   const totalWeeks = 8;
   
   // Calculate end date (8 weeks from registration)
@@ -63,6 +88,16 @@ export function calculateProgramSchedule(registrationDate: Date): WeeklySchedule
 /**
  * Format a date in a user-friendly format
  */
-export function formatDate(date: Date): string {
-  return format(date, "MMM d, yyyy");
+export function formatDate(date: Date | string | null | undefined): string {
+  const validDate = safeParseDateValue(date);
+  if (!validDate) {
+    return 'Invalid date';
+  }
+  
+  try {
+    return format(validDate, "MMM d, yyyy");
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return 'Invalid date';
+  }
 }
