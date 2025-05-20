@@ -1,5 +1,5 @@
 
-import { addWeeks, format, isAfter, isBefore, isEqual, startOfDay, isValid, parseISO } from "date-fns";
+import { addWeeks, format, isAfter, isBefore, isEqual, startOfDay, isValid, parseISO, differenceInDays, addDays } from "date-fns";
 
 export interface WeeklySchedule {
   startDate: Date;
@@ -24,6 +24,16 @@ export function safeParseDateValue(dateValue: Date | string | null | undefined):
       return isValid(parsedDate) ? parsedDate : null;
     } catch (error) {
       console.error("Error parsing date string:", error);
+      return null;
+    }
+  }
+  
+  // If it's a Firebase Timestamp, it should have toDate() method
+  if (dateValue instanceof Object && 'toDate' in dateValue && typeof dateValue.toDate === 'function') {
+    try {
+      return dateValue.toDate();
+    } catch (error) {
+      console.error("Error converting Firestore timestamp:", error);
       return null;
     }
   }
@@ -100,4 +110,98 @@ export function formatDate(date: Date | string | null | undefined): string {
     console.error("Error formatting date:", error);
     return 'Invalid date';
   }
+}
+
+/**
+ * Calculate user engagement metrics
+ * @param registrationDate The date the user registered
+ * @param lastSubmissionDate The date of the user's last submission
+ * @param submissionsCount Total number of submissions
+ */
+export function calculateUserEngagement(registrationDate: Date | string | null | undefined, lastSubmissionDate: Date | string | null | undefined, submissionsCount: number): { 
+  activeFor: number; 
+  submissionsPerWeek: number;
+  daysSinceLastSubmission: number;
+  isActive: boolean;
+} {
+  const validRegistrationDate = safeParseDateValue(registrationDate);
+  const validLastSubmissionDate = safeParseDateValue(lastSubmissionDate);
+  const today = new Date();
+  
+  if (!validRegistrationDate) {
+    return { activeFor: 0, submissionsPerWeek: 0, daysSinceLastSubmission: 0, isActive: false };
+  }
+  
+  // Calculate days active
+  const activeForDays = differenceInDays(today, validRegistrationDate);
+  
+  // Calculate weeks active (minimum 1 week to avoid division by zero)
+  const weeksActive = Math.max(1, Math.ceil(activeForDays / 7));
+  
+  // Calculate submissions per week
+  const submissionsPerWeek = submissionsCount / weeksActive;
+  
+  // Calculate days since last submission
+  const daysSinceLastSubmission = validLastSubmissionDate 
+    ? differenceInDays(today, validLastSubmissionDate)
+    : activeForDays;
+  
+  // User is considered active if they submitted something in the last 14 days
+  const isActive = daysSinceLastSubmission <= 14;
+  
+  return {
+    activeFor: activeForDays,
+    submissionsPerWeek: parseFloat(submissionsPerWeek.toFixed(2)),
+    daysSinceLastSubmission,
+    isActive
+  };
+}
+
+/**
+ * Calculate time remaining before next submission is due
+ * @param registrationDate User registration date
+ * @param lastSubmissionDate Last submission date
+ * @param submissionTimeExtension Any extra time granted (in days)
+ */
+export function calculateTimeToNextSubmission(registrationDate: Date | string | null | undefined, lastSubmissionDate: Date | string | null | undefined, submissionTimeExtension: number = 0): {
+  daysToNextSubmission: number;
+  nextSubmissionDate: Date | null;
+  hasTimeExtension: boolean;
+} {
+  const validRegistrationDate = safeParseDateValue(registrationDate);
+  const validLastSubmissionDate = safeParseDateValue(lastSubmissionDate);
+  
+  if (!validRegistrationDate) {
+    return { daysToNextSubmission: 0, nextSubmissionDate: null, hasTimeExtension: false };
+  }
+  
+  const today = new Date();
+  
+  // If no submissions yet, calculate from registration date + 7 days
+  if (!validLastSubmissionDate) {
+    const firstDueDate = addDays(validRegistrationDate, 7);
+    const daysToFirstSubmission = Math.max(0, differenceInDays(firstDueDate, today));
+    
+    return {
+      daysToNextSubmission: daysToFirstSubmission,
+      nextSubmissionDate: firstDueDate,
+      hasTimeExtension: submissionTimeExtension > 0
+    };
+  }
+  
+  // Standard submission interval is 7 days
+  let nextDueDate = addDays(validLastSubmissionDate, 7);
+  
+  // Add any extensions
+  if (submissionTimeExtension > 0) {
+    nextDueDate = addDays(nextDueDate, submissionTimeExtension);
+  }
+  
+  const daysToNextDue = Math.max(0, differenceInDays(nextDueDate, today));
+  
+  return {
+    daysToNextSubmission: daysToNextDue,
+    nextSubmissionDate: nextDueDate,
+    hasTimeExtension: submissionTimeExtension > 0
+  };
 }

@@ -1,54 +1,41 @@
 
-import { Button } from "@/components/ui/button";
-import { Shield, Home, Users, Calendar, FileText } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Users, CalendarDays, FileText, Clipboard, Activity } from "lucide-react";
 
 interface AdminNavigationProps {
-  currentView: 'users' | 'events' | 'submissions' | 'registrations';
-  onViewChange: (view: 'users' | 'events' | 'submissions' | 'registrations') => void;
+  currentView: 'users' | 'events' | 'submissions' | 'registrations' | 'analytics';
+  onViewChange: (view: 'users' | 'events' | 'submissions' | 'registrations' | 'analytics') => void;
 }
 
 const AdminNavigation = ({ currentView, onViewChange }: AdminNavigationProps) => {
   const isMobile = useIsMobile();
   
+  const navItems = [
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'events', label: 'Events', icon: CalendarDays },
+    { id: 'submissions', label: 'Submissions', icon: FileText },
+    { id: 'registrations', label: 'Registrations', icon: Clipboard },
+    { id: 'analytics', label: 'Analytics', icon: Activity }
+  ];
+  
   return (
-    <div className="flex flex-wrap items-center gap-2 sm:gap-6 px-2 sm:px-6 py-2 overflow-x-auto">
-      <Button
-        variant={currentView === 'users' ? 'default' : 'ghost'}
-        onClick={() => onViewChange('users')}
-        className="flex items-center gap-2 text-xs sm:text-sm"
-        size={isMobile ? "sm" : "default"}
-      >
-        <Users className="h-4 w-4" />
-        <span className="hidden sm:inline">Users</span>
-      </Button>
-      <Button
-        variant={currentView === 'events' ? 'default' : 'ghost'}
-        onClick={() => onViewChange('events')}
-        className="flex items-center gap-2 text-xs sm:text-sm"
-        size={isMobile ? "sm" : "default"}
-      >
-        <Calendar className="h-4 w-4" />
-        <span className="hidden sm:inline">Events</span>
-      </Button>
-      <Button
-        variant={currentView === 'registrations' ? 'default' : 'ghost'}
-        onClick={() => onViewChange('registrations')}
-        className="flex items-center gap-2 text-xs sm:text-sm"
-        size={isMobile ? "sm" : "default"}
-      >
-        <Users className="h-4 w-4" />
-        <span className="hidden sm:inline">Registrations</span>
-      </Button>
-      <Button
-        variant={currentView === 'submissions' ? 'default' : 'ghost'}
-        onClick={() => onViewChange('submissions')}
-        className="flex items-center gap-2 text-xs sm:text-sm"
-        size={isMobile ? "sm" : "default"}
-      >
-        <FileText className="h-4 w-4" />
-        <span className="hidden sm:inline">Submissions</span>
-      </Button>
+    <div className="overflow-x-auto">
+      <div className="flex border-b border-gray-100">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => onViewChange(item.id as any)}
+            className={`flex items-center gap-2 px-4 py-3 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+              currentView === item.id
+                ? 'text-blue-600 border-blue-600'
+                : 'text-gray-600 border-transparent hover:text-blue-600 hover:border-blue-200'
+            }`}
+          >
+            <item.icon className="h-4 w-4" />
+            {!isMobile && item.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 };
