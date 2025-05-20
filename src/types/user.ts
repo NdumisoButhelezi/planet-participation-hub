@@ -25,6 +25,17 @@ export interface User {
   lastTimeExtensionDate?: Date | string;
 }
 
+export interface UserWithAnalytics extends User {
+  submissionCount: number;
+  lastSubmissionDate: Date | string | null;
+  engagementRate: number;
+  daysSinceLastSubmission: number;
+  isActive: boolean;
+  daysToNextSubmission: number;
+  nextSubmissionDate: Date | null;
+  hasTimeExtension: boolean;
+}
+
 export interface Submission {
   id: string;
   userId: string;

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { User, Submission } from "@/types/user";
+import { User, UserWithAnalytics, Submission } from "@/types/user";
 import { formatDate, calculateUserEngagement, calculateTimeToNextSubmission } from "@/utils/dateUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,7 @@ interface UserAnalyticsProps {
 
 const UserAnalytics = ({ users, submissions }: UserAnalyticsProps) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredUsers, setFilteredUsers] = useState<User[]>(users);
+  const [filteredUsers, setFilteredUsers] = useState<UserWithAnalytics[]>([]);
   const [sortColumn, setSortColumn] = useState<string>("engagementRate");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
@@ -28,7 +28,7 @@ const UserAnalytics = ({ users, submissions }: UserAnalyticsProps) => {
   }, {} as Record<string, number>);
 
   // Calculate analytics for each user
-  const usersWithAnalytics = users.map(user => {
+  const usersWithAnalytics: UserWithAnalytics[] = users.map(user => {
     const userSubmissions = submissions.filter(s => s.userId === user.id);
     const submissionCount = userSubmissions.length;
     
@@ -61,7 +61,7 @@ const UserAnalytics = ({ users, submissions }: UserAnalyticsProps) => {
     return {
       ...user,
       submissionCount,
-      lastSubmissionDate: lastSubmissionDateObj || user.lastSubmissionDate,
+      lastSubmissionDate: lastSubmissionDateObj || user.lastSubmissionDate || null,
       engagementRate: engagement.submissionsPerWeek,
       daysSinceLastSubmission: engagement.daysSinceLastSubmission,
       isActive: engagement.isActive,
@@ -79,9 +79,9 @@ const UserAnalytics = ({ users, submissions }: UserAnalyticsProps) => {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(user => 
         user.email.toLowerCase().includes(query) || 
-        user.fullName?.toLowerCase().includes(query) || 
-        user.studentNumber?.toLowerCase().includes(query) ||
-        user.course?.toLowerCase().includes(query)
+        (user.fullName?.toLowerCase() || '').includes(query) || 
+        (user.studentNumber?.toLowerCase() || '').includes(query) ||
+        (user.course?.toLowerCase() || '').includes(query)
       );
     }
     
@@ -127,7 +127,7 @@ const UserAnalytics = ({ users, submissions }: UserAnalyticsProps) => {
     });
     
     setFilteredUsers(filtered);
-  }, [searchQuery, users, submissions, sortColumn, sortDirection, usersWithAnalytics]);
+  }, [searchQuery, sortColumn, sortDirection, usersWithAnalytics]);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
