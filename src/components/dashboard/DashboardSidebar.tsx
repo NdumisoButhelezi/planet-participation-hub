@@ -1,5 +1,5 @@
 
-import { CalendarDays, Book, Calendar } from "lucide-react";
+import { CalendarDays, Book, Calendar, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DashboardSidebarProps {
@@ -18,6 +18,11 @@ const DashboardSidebar = ({ activeSection, onChangeSection }: DashboardSidebarPr
       name: "Learning Paths",
       icon: Book,
       id: "learning-paths"
+    },
+    {
+      name: "Community Showcase",
+      icon: Users,
+      id: "community-showcase"
     },
     {
       name: "Events",

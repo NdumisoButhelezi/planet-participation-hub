@@ -14,6 +14,7 @@ import CurriculumSchedule from "@/components/dashboard/CurriculumSchedule";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import ProgressTracker from "@/components/dashboard/ProgressTracker";
 import { calculateProgramSchedule } from "@/utils/dateUtils";
+import CommunityShowcase from "@/components/dashboard/CommunityShowcase";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -239,6 +240,8 @@ const Dashboard = () => {
             onSubmitReflection={handleSubmitReflection}
           />
         );
+      case "community-showcase":
+        return <CommunityShowcase />;
       case "events":
         return (
           <EventsSection 
