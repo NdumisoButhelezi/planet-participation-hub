@@ -16,13 +16,27 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
+  const [currentTip, setCurrentTip] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const loadingTips = [
+    "🚀 Welcome back to PlutoDev! Your coding journey continues...",
+    "💡 Pro Tip: Check out the Community Showcase for inspiration from fellow developers!",
+    "⭐ Quick Reminder: Complete weekly challenges to earn bonus points and climb the leaderboard!",
+    "🏆 Fun Fact: Our top students average 150+ points per week through consistent engagement!",
+    "🎯 Success Strategy: The best way to learn is by building - start your next project today!"
+  ];
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    // Cycle through tips during loading
+    const tipInterval = setInterval(() => {
+      setCurrentTip((prev) => (prev + 1) % loadingTips.length);
+    }, 1500);
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -105,9 +119,32 @@ const Login = () => {
         variant: "destructive",
       });
     } finally {
+      clearInterval(tipInterval);
       setIsLoading(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50">
+        <div className="text-center p-8">
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full mx-auto flex items-center justify-center mb-6 animate-pulse">
+            <RocketIcon className="h-8 w-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">Signing you in...</h2>
+          <div className="w-48 h-2 bg-gray-200 rounded-full mx-auto mb-6">
+            <div className="h-full bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse"></div>
+          </div>
+          <div className="max-w-md mx-auto bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border-l-4 border-purple-400">
+            <div className="text-sm font-medium text-purple-700 mb-2">💡 PlutoDev Tip</div>
+            <p className="text-gray-700 text-sm leading-relaxed transition-all duration-300">
+              {loadingTips[currentTip]}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-50">

@@ -6,9 +6,10 @@ import { Submission, User, SkillLevel } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Github, Share2, Trophy, Star, Calendar, User as UserIcon } from "lucide-react";
+import { ExternalLink, Github, Share2, Trophy, Star, Calendar, User as UserIcon, Facebook, Linkedin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/utils/dateUtils";
+import LoadingTips from "@/components/shared/LoadingTips";
 
 interface SubmissionWithUser extends Submission {
   user: User;
@@ -98,30 +99,32 @@ const CommunityShowcase = () => {
     return "Special Project";
   };
 
-  const handleShare = (submission: SubmissionWithUser) => {
-    if (navigator.share) {
-      navigator.share({
-        title: `Check out ${submission.user.name}'s amazing project!`,
-        text: submission.learningReflection.substring(0, 100) + "...",
-        url: submission.projectLink
-      });
-    } else {
-      navigator.clipboard.writeText(submission.projectLink);
-      toast({
-        title: "Link copied!",
-        description: "Project link has been copied to clipboard",
-      });
+  const handleShare = (submission: SubmissionWithUser, platform: 'facebook' | 'linkedin' | 'whatsapp' | 'copy') => {
+    const shareText = `Check out ${submission.user.name}'s amazing ${getTaskDisplayName(submission.taskId)} on PlutoDev! 🚀\n\n"${submission.learningReflection.substring(0, 100)}..."\n\nJoin our coding community and start your development journey!`;
+    const shareUrl = "https://planet-participation-hub.lovable.app";
+    
+    switch (platform) {
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`, '_blank');
+        break;
+      case 'linkedin':
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(`${submission.user.name}'s Project on PlutoDev`)}&summary=${encodeURIComponent(shareText)}`, '_blank');
+        break;
+      case 'whatsapp':
+        window.open(`https://wa.me/?text=${encodeURIComponent(shareText + '\n' + shareUrl)}`, '_blank');
+        break;
+      case 'copy':
+        navigator.clipboard.writeText(shareText + '\n' + shareUrl);
+        toast({
+          title: "Link copied!",
+          description: "Project details copied to clipboard",
+        });
+        break;
     }
   };
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="text-center py-12">
-          <div className="animate-pulse">Loading amazing projects...</div>
-        </div>
-      </div>
-    );
+    return <LoadingTips />;
   }
 
   return (
@@ -262,14 +265,36 @@ const CommunityShowcase = () => {
                     </Button>
                   )}
                   
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleShare(submission)}
-                    className="border-purple-200 hover:bg-purple-50"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
+                  {/* Share Dropdown */}
+                  <div className="relative group">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="border-purple-200 hover:bg-purple-50"
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                    <div className="absolute right-0 top-full mt-2 bg-white border rounded-lg shadow-lg p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                      <div className="flex flex-col gap-1 min-w-[120px]">
+                        <Button size="sm" variant="ghost" onClick={() => handleShare(submission, 'facebook')} className="justify-start">
+                          <Facebook className="h-4 w-4 mr-2 text-blue-600" />
+                          Facebook
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleShare(submission, 'linkedin')} className="justify-start">
+                          <Linkedin className="h-4 w-4 mr-2 text-blue-800" />
+                          LinkedIn
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleShare(submission, 'whatsapp')} className="justify-start">
+                          <div className="w-4 h-4 mr-2 bg-green-500 rounded text-white text-xs flex items-center justify-center font-bold">W</div>
+                          WhatsApp
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => handleShare(submission, 'copy')} className="justify-start">
+                          <Share2 className="h-4 w-4 mr-2" />
+                          Copy Link
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>

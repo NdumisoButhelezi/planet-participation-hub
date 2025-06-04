@@ -15,6 +15,7 @@ import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import ProgressTracker from "@/components/dashboard/ProgressTracker";
 import { calculateProgramSchedule } from "@/utils/dateUtils";
 import CommunityShowcase from "@/components/dashboard/CommunityShowcase";
+import LoadingTips from "@/components/shared/LoadingTips";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -210,11 +211,7 @@ const Dashboard = () => {
   }, [toast]);
 
   if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-pulse">Loading...</div>
-      </div>
-    );
+    return <LoadingTips />;
   }
 
   const programSchedule = user.registrationDate 
