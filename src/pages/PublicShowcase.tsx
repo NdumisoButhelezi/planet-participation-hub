@@ -6,7 +6,7 @@ import { Submission, User, SkillLevel } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Github, Share2, Trophy, Star, Calendar, User as UserIcon, Facebook, Linkedin, MapPin, Mail, Globe, Code, Award, Target } from "lucide-react";
+import { ExternalLink, Github, Share2, Trophy, Star, Calendar, User as UserIcon, Facebook, Linkedin, MapPin, Mail, Globe, Code, Award, Target, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/utils/dateUtils";
 import LoadingTips from "@/components/shared/LoadingTips";
