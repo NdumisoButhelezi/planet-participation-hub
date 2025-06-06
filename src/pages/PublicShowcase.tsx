@@ -101,7 +101,7 @@ const PublicShowcase = () => {
   };
 
   const handleShare = (submission: SubmissionWithUser, platform: 'facebook' | 'linkedin' | 'whatsapp' | 'copy') => {
-    const shareText = `🚀 Check out ${submission.user.name}'s amazing ${getTaskDisplayName(submission.taskId)} from PlutoDev! 
+    const shareText = `🚀 Check out ${submission.user.name || 'this developer'}'s amazing ${getTaskDisplayName(submission.taskId)} from PlutoDev! 
 
 "${submission.learningReflection.substring(0, 150)}..."
 
@@ -113,7 +113,7 @@ Discover talented developers at PlutoDev - where the next generation of tech tal
         window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`, '_blank');
         break;
       case 'linkedin':
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(`Talented Developer: ${submission.user.name} | PlutoDev`)}&summary=${encodeURIComponent(shareText)}`, '_blank');
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(`Talented Developer: ${submission.user.name || 'PlutoDev'} | PlutoDev`)}&summary=${encodeURIComponent(shareText)}`, '_blank');
         break;
       case 'whatsapp':
         window.open(`https://wa.me/?text=${encodeURIComponent(shareText + '\n\n' + shareUrl)}`, '_blank');
@@ -139,11 +139,14 @@ Discover talented developers at PlutoDev - where the next generation of tech tal
   }
 
   if (selectedProject) {
+    const projectTitle = `${selectedProject.user.name || 'Developer'}'s Project | PlutoDev Talent Showcase`;
+    const projectDescription = `Discover ${selectedProject.user.name || 'this developer'}'s amazing ${getTaskDisplayName(selectedProject.taskId)} - ${selectedProject.learningReflection.substring(0, 150)}...`;
+    
     return (
       <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
         <Helmet>
-          <title>{selectedProject.user.name}'s Project | PlutoDev Talent Showcase</title>
-          <meta name="description" content={`Discover ${selectedProject.user.name}'s amazing ${getTaskDisplayName(selectedProject.taskId)} - ${selectedProject.learningReflection.substring(0, 150)}...`} />
+          <title>{projectTitle}</title>
+          <meta name="description" content={projectDescription} />
         </Helmet>
         
         {/* Header */}
@@ -179,7 +182,7 @@ Discover talented developers at PlutoDev - where the next generation of tech tal
                       {selectedProject.user.name?.charAt(0).toUpperCase() || "?"}
                     </div>
                     <div>
-                      <h1 className="text-3xl font-bold text-gray-900">{selectedProject.user.name}</h1>
+                      <h1 className="text-3xl font-bold text-gray-900">{selectedProject.user.name || "Developer"}</h1>
                       <p className="text-lg text-gray-600 flex items-center gap-2 mt-1">
                         <Code className="h-5 w-5" />
                         {selectedProject.user.course || "Software Developer"}
@@ -283,10 +286,10 @@ Discover talented developers at PlutoDev - where the next generation of tech tal
             {/* Call to Action for Employers */}
             <Card className="bg-gradient-to-r from-purple-600 to-pink-600 text-white">
               <CardContent className="p-8 text-center">
-                <h3 className="text-2xl font-bold mb-4">Interested in Hiring {selectedProject.user.name}?</h3>
+                <h3 className="text-2xl font-bold mb-4">Interested in Hiring {selectedProject.user.name || "this Developer"}?</h3>
                 <p className="text-purple-100 mb-6 text-lg">
                   This developer has demonstrated exceptional skills and dedication through our comprehensive learning program.
-                  Connect with talented developers like {selectedProject.user.name} through PlutoDev.
+                  Connect with talented developers like {selectedProject.user.name || "them"} through PlutoDev.
                 </p>
                 <div className="flex flex-wrap justify-center gap-4">
                   <Button size="lg" variant="secondary" asChild>
@@ -407,7 +410,7 @@ Discover talented developers at PlutoDev - where the next generation of tech tal
                         {submission.user.name?.charAt(0).toUpperCase() || "?"}
                       </div>
                       <div>
-                        <div className="font-semibold text-gray-900">{submission.user.name}</div>
+                        <div className="font-semibold text-gray-900">{submission.user.name || "Developer"}</div>
                         <div className="text-sm text-gray-500 flex items-center gap-1">
                           <UserIcon className="h-3 w-3" />
                           {submission.user.course || "Developer"}
