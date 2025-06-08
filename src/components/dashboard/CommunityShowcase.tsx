@@ -6,7 +6,7 @@ import { Submission, User, SkillLevel } from "@/types/user";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Github, Share2, Trophy, Star, Calendar, User as UserIcon, Facebook, Linkedin } from "lucide-react";
+import { ExternalLink, Linkedin, Share2, Trophy, Star, Calendar, User as UserIcon, Facebook, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/utils/dateUtils";
 import LoadingTips from "@/components/shared/LoadingTips";
@@ -197,11 +197,26 @@ const CommunityShowcase = () => {
                         <UserIcon className="h-3 w-3" />
                         {submission.user.course || "Developer"}
                       </div>
+                      {/* Show email for high-performing users */}
+                      {(submission.user.points || 0) >= 200 && (
+                        <div className="text-xs text-purple-600 flex items-center gap-1 mt-1">
+                          <Mail className="h-3 w-3" />
+                          {submission.user.email}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <Badge className={getSkillLevelColor(submission.user.skillLevel)}>
-                    {submission.user.skillLevel}
-                  </Badge>
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge className={getSkillLevelColor(submission.user.skillLevel)}>
+                      {submission.user.skillLevel}
+                    </Badge>
+                    {(submission.user.points || 0) >= 200 && (
+                      <Badge variant="outline" className="text-purple-600 border-purple-300">
+                        <Trophy className="h-3 w-3 mr-1" />
+                        Top Performer
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 
                 <CardTitle className="text-lg mt-3 text-purple-700">
@@ -258,10 +273,11 @@ const CommunityShowcase = () => {
                       size="sm" 
                       variant="outline"
                       onClick={() => window.open(submission.socialMediaLink, '_blank')}
-                      className="border-purple-200 hover:bg-purple-50"
+                      className="border-blue-200 hover:bg-blue-50"
+                      title="View LinkedIn Post"
                     >
-                      <Github className="h-4 w-4 mr-1" />
-                      Code
+                      <Linkedin className="h-4 w-4 mr-1 text-blue-600" />
+                      LinkedIn
                     </Button>
                   )}
                   
@@ -310,11 +326,13 @@ const CommunityShowcase = () => {
         <p className="text-gray-600 mb-4">
           Complete your learning paths and submit your projects to inspire others!
           Every approved submission earns you points and recognition in our community.
+          Reach 200+ points to unlock premium visibility with email contact for collaboration!
         </p>
         <div className="flex justify-center gap-4 text-sm text-purple-600">
           <span>🏆 Earn Recognition</span>
           <span>⭐ Inspire Others</span>
           <span>🤝 Build Your Network</span>
+          <span>📧 200+ Points = Email Visibility</span>
         </div>
       </div>
     </div>
