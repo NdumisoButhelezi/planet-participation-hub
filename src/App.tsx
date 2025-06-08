@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import Leaderboard from "./pages/Leaderboard";
 import About from "./pages/About";
 import PublicShowcase from "./pages/PublicShowcase";
+import VerifyUser from "./pages/VerifyUser";
 import { Toaster } from "@/components/ui/toaster";
 import { useEffect } from "react";
 import "./App.css";
@@ -58,6 +59,7 @@ function App() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/about" element={<About />} />
           <Route path="/showcase" element={<PublicShowcase />} />
+          <Route path="/verify/:userId/:hash" element={<VerifyUser />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />

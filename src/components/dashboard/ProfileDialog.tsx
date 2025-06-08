@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -7,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { db, auth } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import UserQRCode from "@/components/verification/UserQRCode";
 
 interface ProfileDialogProps {
   open: boolean;
@@ -40,6 +40,7 @@ const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
     githubProfile: "",
     learningStyle: ""
   });
+  const [userName, setUserName] = useState("");
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -49,8 +50,12 @@ const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
       try {
         const docRef = doc(db, "users", userId);
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().profile) {
-          setProfile(docSnap.data().profile);
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          if (userData.profile) {
+            setProfile(userData.profile);
+          }
+          setUserName(userData.name || "User");
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -93,7 +98,15 @@ const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Edit Profile</DialogTitle>
+            {auth.currentUser?.uid && (
+              <UserQRCode 
+                userId={auth.currentUser.uid} 
+                userName={userName}
+              />
+            )}
+          </div>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <Input
