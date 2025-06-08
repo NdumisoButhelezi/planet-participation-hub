@@ -79,7 +79,9 @@ const curriculumData: WeeklyTask[] = [
       "Integrate contact form with Firebase",
       "Add light/dark mode toggle",
       "Work on smooth scrolling & UX enhancements"
-    ]
+    ],
+    videoUrl: "https://www.youtube.com/embed/6JkXc584K2g",
+    videoTitle: "Week 5: Advanced Portfolio Features"
   },
   {
     week: 6,
@@ -88,7 +90,9 @@ const curriculumData: WeeklyTask[] = [
       "Display past projects & skills",
       "Implement a filterable projects section",
       "Fetch & display GitHub repositories dynamically"
-    ]
+    ],
+    videoUrl: "https://www.youtube.com/embed/7kfnYRzMzSc",
+    videoTitle: "Week 6: Project Showcase"
   },
   {
     week: 7,
@@ -97,7 +101,9 @@ const curriculumData: WeeklyTask[] = [
       "Host the site on Vercel/Netlify",
       "Optimize for performance & SEO",
       "Use Lighthouse for auditing"
-    ]
+    ],
+    videoUrl: "https://www.youtube.com/embed/S6jYfD1wtDo",
+    videoTitle: "Week 7: Deployment & Optimization"
   },
   {
     week: 8,
