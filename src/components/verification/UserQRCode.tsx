@@ -1,5 +1,5 @@
 
-import QRCode from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Download, QrCode } from "lucide-react";
@@ -18,17 +18,36 @@ const UserQRCode = ({ userId, userName }: UserQRCodeProps) => {
   const verificationUrl = `${window.location.origin}/verify/${userId}/${verificationHash}`;
 
   const downloadQR = () => {
-    const canvas = document.getElementById('qr-code-canvas') as HTMLCanvasElement;
-    if (canvas) {
-      const link = document.createElement('a');
-      link.download = `${userName}-verification-qr.png`;
-      link.href = canvas.toDataURL();
-      link.click();
+    // Create a canvas from the SVG for download
+    const svg = document.querySelector('#qr-code-svg') as SVGElement;
+    if (svg) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
       
-      toast({
-        title: "QR Code Downloaded",
-        description: "Your verification QR code has been saved",
-      });
+      const svgData = new XMLSerializer().serializeToString(svg);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(svgBlob);
+      
+      img.onload = () => {
+        canvas.width = 250;
+        canvas.height = 250;
+        ctx?.drawImage(img, 0, 0, 250, 250);
+        
+        const link = document.createElement('a');
+        link.download = `${userName}-verification-qr.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+        
+        URL.revokeObjectURL(url);
+        
+        toast({
+          title: "QR Code Downloaded",
+          description: "Your verification QR code has been saved",
+        });
+      };
+      
+      img.src = url;
     }
   };
 
@@ -46,8 +65,8 @@ const UserQRCode = ({ userId, userName }: UserQRCodeProps) => {
         </DialogHeader>
         <div className="flex flex-col items-center space-y-4 p-4">
           <div className="bg-white p-4 rounded-lg border">
-            <QRCode
-              id="qr-code-canvas"
+            <QRCodeSVG
+              id="qr-code-svg"
               value={verificationUrl}
               size={200}
               level="H"

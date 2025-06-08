@@ -1,5 +1,16 @@
-
 export type SkillLevel = "beginner" | "intermediate" | "advanced";
+
+export interface UserProfile {
+  fullName?: string;
+  studentNumber?: string;
+  phoneNumber?: string;
+  course?: string;
+  yearOfStudy?: string;
+  aiInterestArea?: string;
+  linkedinProfile?: string;
+  githubProfile?: string;
+  learningStyle?: string;
+}
 
 export interface User {
   id: string;
@@ -23,6 +34,7 @@ export interface User {
   lastPointsAdjustmentDate?: Date | string;
   submissionTimeExtension?: number; // Number of additional days granted
   lastTimeExtensionDate?: Date | string;
+  profile?: UserProfile;
 }
 
 export interface UserWithAnalytics extends User {
