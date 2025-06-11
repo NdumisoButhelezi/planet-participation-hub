@@ -301,7 +301,6 @@ const Dashboard = () => {
       />
 
       <ProfileDialog
-        user={user}
         open={showProfile}
         onOpenChange={setShowProfile}
       />
