@@ -13,6 +13,7 @@ import EventsSection from "@/components/dashboard/EventsSection";
 import CurriculumSchedule from "@/components/dashboard/CurriculumSchedule";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import ProgressTracker from "@/components/dashboard/ProgressTracker";
+import ProfileDialog from "@/components/dashboard/ProfileDialog";
 import { calculateProgramSchedule } from "@/utils/dateUtils";
 import CommunityShowcase from "@/components/dashboard/CommunityShowcase";
 import LoadingTips from "@/components/shared/LoadingTips";
@@ -20,6 +21,7 @@ import LoadingTips from "@/components/shared/LoadingTips";
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [showAgreement, setShowAgreement] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
   const [activeSection, setActiveSection] = useState("weekly-program");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -210,6 +212,10 @@ const Dashboard = () => {
     fetchEvents();
   }, [toast]);
 
+  const handleProfileClick = () => {
+    setShowProfile(true);
+  };
+
   if (!user) {
     return <LoadingTips />;
   }
@@ -258,7 +264,11 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <DashboardHeader user={user} />
+      <DashboardHeader 
+        user={user} 
+        onProfileClick={handleProfileClick}
+        isAdmin={user.isAdmin}
+      />
 
       <main className="container mx-auto px-6 py-8">
         <WelcomeSection user={user} />
@@ -288,6 +298,12 @@ const Dashboard = () => {
         open={showAgreement}
         onOpenChange={setShowAgreement}
         onAccept={handleAcceptAgreement}
+      />
+
+      <ProfileDialog
+        user={user}
+        open={showProfile}
+        onOpenChange={setShowProfile}
       />
     </div>
   );
