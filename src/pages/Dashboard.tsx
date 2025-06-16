@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
@@ -14,6 +15,7 @@ import CurriculumSchedule from "@/components/dashboard/CurriculumSchedule";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import ProgressTracker from "@/components/dashboard/ProgressTracker";
 import ProfileDialog from "@/components/dashboard/ProfileDialog";
+import DigitalIDCard from "@/components/dashboard/DigitalIDCard";
 import { calculateProgramSchedule } from "@/utils/dateUtils";
 import CommunityShowcase from "@/components/dashboard/CommunityShowcase";
 import LoadingTips from "@/components/shared/LoadingTips";
@@ -243,6 +245,8 @@ const Dashboard = () => {
             onSubmitReflection={handleSubmitReflection}
           />
         );
+      case "digital-id":
+        return <DigitalIDCard user={user} submissions={submissions} />;
       case "community-showcase":
         return <CommunityShowcase />;
       case "events":

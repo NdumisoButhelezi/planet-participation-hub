@@ -4,7 +4,6 @@ import ProgramAgreementDialog from "@/components/shared/ProgramAgreementDialog";
 import Navbar from "@/components/home/Navbar";
 import HeroSection from "@/components/home/HeroSection";
 import FeatureSection from "@/components/home/FeatureSection";
-import StatsSection from "@/components/home/StatsSection";
 import ContactSection from "@/components/home/ContactSection";
 import CTASection from "@/components/home/CTASection";
 import Footer from "@/components/home/Footer";
@@ -51,9 +50,6 @@ const Index = () => {
 
       {/* Features Section */}
       <FeatureSection />
-
-      {/* Stats Section */}
-      <StatsSection />
       
       {/* Contact Form */}
       <ContactSection />
