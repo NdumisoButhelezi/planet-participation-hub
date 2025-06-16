@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,7 @@ const DigitalIDCard = ({ user, submissions }: DigitalIDCardProps) => {
     const profileFields = [
       user.profile?.fullName,
       user.profile?.studentNumber,
-      user.profile?.email,
+      user.email, // Changed from user.profile?.email to user.email
       user.profile?.phoneNumber,
       user.profile?.course,
       user.profile?.yearOfStudy,
@@ -60,7 +59,7 @@ const DigitalIDCard = ({ user, submissions }: DigitalIDCardProps) => {
     });
 
     setIsEligible(!!week1Submission && profileComplete);
-  }, [submissions, user.profile]);
+  }, [submissions, user.profile, user.email]); // Added user.email to dependencies
 
   const generateDigitalID = () => {
     // Generate verification URL with user ID and timestamp
