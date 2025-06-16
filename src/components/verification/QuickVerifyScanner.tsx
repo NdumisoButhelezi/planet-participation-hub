@@ -19,6 +19,7 @@ const QuickVerifyScanner = () => {
   const [userSubmissions, setUserSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const codeReader = useRef<BrowserMultiFormatReader | null>(null);
   const { toast } = useToast();
@@ -37,19 +38,37 @@ const QuickVerifyScanner = () => {
     if (!codeReader.current || !videoRef.current) return;
 
     try {
+      setCameraError(null);
       setIsScanning(true);
+
+      // Check if camera is available
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      
+      if (videoDevices.length === 0) {
+        throw new Error("No camera devices found");
+      }
+
+      // Request camera permission
+      await navigator.mediaDevices.getUserMedia({ video: true });
+
       const result = await codeReader.current.decodeFromVideoDevice(
         undefined,
         videoRef.current,
         (result, error) => {
           if (result) {
+            console.log("QR Code scanned:", result.getText());
             handleScanResult(result.getText());
             stopScanning();
           }
+          if (error && error.name !== 'NotFoundException') {
+            console.error("Scanning error:", error);
+          }
         }
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error starting scanner:", error);
+      setCameraError(error.message || "Unable to access camera");
       toast({
         title: "Scanner Error",
         description: "Unable to access camera. Please check permissions or try manual input.",
@@ -64,11 +83,13 @@ const QuickVerifyScanner = () => {
       codeReader.current.reset();
     }
     setIsScanning(false);
+    setCameraError(null);
   };
 
   const handleScanResult = async (scannedText: string) => {
     setLoading(true);
     try {
+      console.log("Processing scanned text:", scannedText);
       const urlPattern = /\/verify\/([^\/]+)\/([^\/]+)/;
       const match = scannedText.match(urlPattern);
       
@@ -177,6 +198,7 @@ const QuickVerifyScanner = () => {
     setScannedUser(null);
     setUserSubmissions([]);
     setManualInput("");
+    setCameraError(null);
     stopScanning();
   };
 
@@ -211,17 +233,31 @@ const QuickVerifyScanner = () => {
                 {/* Camera Scanner */}
                 <div className="text-center">
                   {!isScanning ? (
-                    <Button onClick={startScanning} className="flex items-center gap-2">
-                      <Camera className="h-4 w-4" />
-                      Start Camera Scanner
-                    </Button>
+                    <div className="space-y-2">
+                      <Button onClick={startScanning} className="flex items-center gap-2">
+                        <Camera className="h-4 w-4" />
+                        Start Camera Scanner
+                      </Button>
+                      {cameraError && (
+                        <p className="text-sm text-red-600">{cameraError}</p>
+                      )}
+                    </div>
                   ) : (
                     <div className="space-y-4">
-                      <video ref={videoRef} className="w-full max-w-sm mx-auto border rounded-lg" />
-                      <Button onClick={stopScanning} variant="destructive" className="flex items-center gap-2">
-                        <CameraOff className="h-4 w-4" />
-                        Stop Scanner
-                      </Button>
+                      <video 
+                        ref={videoRef} 
+                        className="w-full max-w-sm mx-auto border rounded-lg"
+                        autoPlay
+                        playsInline
+                        muted
+                      />
+                      <div className="space-y-2">
+                        <p className="text-sm text-gray-600">Point your camera at a QR code</p>
+                        <Button onClick={stopScanning} variant="destructive" className="flex items-center gap-2">
+                          <CameraOff className="h-4 w-4" />
+                          Stop Scanner
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -263,7 +299,7 @@ const QuickVerifyScanner = () => {
                 <div className="grid md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                   <div>
                     <h4 className="font-semibold text-lg">{scannedUser.name}</h4>
-                    <p className="text-gray-600">{scannedUser.course || "Student Developer"}</p>
+                    <p className="text-gray-600">{scannedUser.profile?.course || "Student Developer"}</p>
                     <p className="text-gray-600">{scannedUser.email}</p>
                   </div>
                   <div className="space-y-2">

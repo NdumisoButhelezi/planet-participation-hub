@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,7 @@ const DigitalIDCard = ({ user, submissions }: DigitalIDCardProps) => {
   // Essential skills gained from the 8-week challenge
   const skillsGained = [
     "AI-Powered Content Creation",
-    "Digital Writing & Communication",
+    "Digital Writing & Communication", 
     "Creative Problem Solving",
     "Project Management",
     "Peer Collaboration",
@@ -43,7 +44,7 @@ const DigitalIDCard = ({ user, submissions }: DigitalIDCardProps) => {
     const profileFields = [
       user.profile?.fullName,
       user.profile?.studentNumber,
-      user.email, // Changed from user.profile?.email to user.email
+      user.email,
       user.profile?.phoneNumber,
       user.profile?.course,
       user.profile?.yearOfStudy,
@@ -59,7 +60,7 @@ const DigitalIDCard = ({ user, submissions }: DigitalIDCardProps) => {
     });
 
     setIsEligible(!!week1Submission && profileComplete);
-  }, [submissions, user.profile, user.email]); // Added user.email to dependencies
+  }, [submissions, user.profile, user.email]);
 
   const generateDigitalID = () => {
     // Generate verification URL with user ID and timestamp
