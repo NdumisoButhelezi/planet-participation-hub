@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { BrowserMultiFormatReader } from "@zxing/library";
 import { Button } from "@/components/ui/button";
@@ -20,6 +19,7 @@ const QRScanner = () => {
   const [loading, setLoading] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const codeReader = useRef<BrowserMultiFormatReader | null>(null);
   const { toast } = useToast();
 
@@ -27,50 +27,67 @@ const QRScanner = () => {
     codeReader.current = new BrowserMultiFormatReader();
     
     return () => {
-      if (codeReader.current) {
-        codeReader.current.reset();
-      }
+      stopScanning();
     };
   }, []);
 
   const startScanning = async () => {
-    if (!codeReader.current || !videoRef.current) return;
-
+    console.log("Starting admin camera scanner...");
+    
     try {
       setCameraError(null);
       setIsScanning(true);
 
-      // Check camera availability
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === 'videoinput');
-      
-      if (videoDevices.length === 0) {
-        throw new Error("No camera devices found");
+      // Check if getUserMedia is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera not supported in this browser");
       }
 
-      // Request camera permission
-      await navigator.mediaDevices.getUserMedia({ video: true });
+      // Request camera permission and get stream
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment' // Use back camera if available
+        } 
+      });
+      
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+        };
+      }
 
-      const result = await codeReader.current.decodeFromVideoDevice(
-        undefined,
-        videoRef.current,
-        (result, error) => {
-          if (result) {
-            console.log("QR Code scanned:", result.getText());
-            handleScanResult(result.getText());
-            stopScanning();
-          }
-          if (error && error.name !== 'NotFoundException') {
-            console.error("Scanning error:", error);
-          }
+      // Start decoding after a short delay to ensure video is ready
+      setTimeout(() => {
+        if (codeReader.current && videoRef.current && stream.active) {
+          codeReader.current.decodeFromVideoDevice(
+            undefined,
+            videoRef.current,
+            (result, error) => {
+              if (result) {
+                console.log("QR Code detected:", result.getText());
+                handleScanResult(result.getText());
+                stopScanning();
+              }
+              // Don't log NotFoundException as it's expected when no QR code is visible
+              if (error && error.name !== 'NotFoundException') {
+                console.error("Scanning error:", error);
+              }
+            }
+          );
         }
-      );
+      }, 500);
+
+      console.log("Admin camera started successfully");
+
     } catch (error: any) {
-      console.error("Error starting scanner:", error);
+      console.error("Error starting admin camera:", error);
       setCameraError(error.message || "Unable to access camera");
       toast({
-        title: "Scanner Error",
-        description: "Unable to access camera. Please check permissions.",
+        title: "Camera Error",
+        description: "Please allow camera access and try again.",
         variant: "destructive",
       });
       setIsScanning(false);
@@ -78,9 +95,24 @@ const QRScanner = () => {
   };
 
   const stopScanning = () => {
+    console.log("Stopping admin camera scanner...");
+    
+    // Stop the video stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    // Reset video element
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    // Reset code reader
     if (codeReader.current) {
       codeReader.current.reset();
     }
+
     setIsScanning(false);
     setCameraError(null);
   };
@@ -318,16 +350,23 @@ const QRScanner = () => {
                 {cameraError && (
                   <p className="text-sm text-red-600">{cameraError}</p>
                 )}
+                <p className="text-xs text-gray-500">Allow camera access when prompted</p>
               </div>
             ) : (
               <div className="space-y-4">
-                <video 
-                  ref={videoRef} 
-                  className="w-full max-w-md mx-auto border rounded-lg"
-                  autoPlay
-                  playsInline
-                  muted
-                />
+                <div className="relative">
+                  <video 
+                    ref={videoRef} 
+                    className="w-full max-w-md mx-auto border rounded-lg bg-black"
+                    autoPlay
+                    playsInline
+                    muted
+                    style={{ maxHeight: '400px' }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-64 h-64 border-2 border-white border-dashed rounded-lg opacity-50"></div>
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <p className="text-sm text-gray-600">Point your camera at a QR code</p>
                   <Button onClick={stopScanning} variant="destructive" className="flex items-center gap-2">
