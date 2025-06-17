@@ -35,6 +35,7 @@ export interface User {
   submissionTimeExtension?: number; // Number of additional days granted
   lastTimeExtensionDate?: Date | string;
   profile?: UserProfile;
+  profileImage?: string; // Added profileImage property
 }
 
 export interface UserWithAnalytics extends User {
