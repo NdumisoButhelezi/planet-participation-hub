@@ -13,6 +13,7 @@ import { addWeeks, differenceInDays, parseISO, addDays, format, isValid } from "
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -36,7 +37,20 @@ const timeExtensionSchema = z.object({
     message: "Days must be a positive number",
   }),
   reason: z.string().min(1, { message: "Reason is required" }),
+  reasonType: z.string().min(1, { message: "Please select a reason type" }),
 });
+
+// Predefined extension reasons
+const extensionReasons = [
+  { value: "high-performance", label: "High Performance Reward", defaultDays: "14", description: "Exceptional academic performance" },
+  { value: "medical", label: "Medical Extension", defaultDays: "21", description: "Health-related circumstances" },
+  { value: "family-emergency", label: "Family Emergency", defaultDays: "14", description: "Urgent family matters" },
+  { value: "technical-issues", label: "Technical Issues", defaultDays: "7", description: "Platform or technical difficulties" },
+  { value: "academic-conflict", label: "Academic Schedule Conflict", defaultDays: "10", description: "Conflicting academic commitments" },
+  { value: "special-circumstances", label: "Special Circumstances", defaultDays: "14", description: "Other exceptional circumstances" },
+  { value: "mentorship-program", label: "Mentorship Program", defaultDays: "21", description: "Extended mentorship opportunity" },
+  { value: "research-project", label: "Research Project Extension", defaultDays: "28", description: "Extended research collaboration" },
+];
 
 const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
   const { toast } = useToast();
@@ -72,6 +86,7 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
     defaultValues: {
       days: "14",
       reason: "High performance extension",
+      reasonType: "",
     },
   });
   
@@ -430,8 +445,18 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
     timeExtensionForm.reset({
       days: "14",
       reason: "High performance extension",
+      reasonType: "",
     });
     setIsExtendingTime(true);
+  };
+
+  // Handle reason type change to auto-fill days and reason
+  const handleReasonTypeChange = (reasonType: string) => {
+    const selectedReason = extensionReasons.find(r => r.value === reasonType);
+    if (selectedReason) {
+      timeExtensionForm.setValue("days", selectedReason.defaultDays);
+      timeExtensionForm.setValue("reason", selectedReason.description);
+    }
   };
 
   // New function to handle time extension
@@ -891,6 +916,37 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
             <form onSubmit={timeExtensionForm.handleSubmit(handleTimeExtension)} className="space-y-4 py-4">
               <FormField
                 control={timeExtensionForm.control}
+                name="reasonType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Extension Type</FormLabel>
+                    <Select onValueChange={(value) => {
+                      field.onChange(value);
+                      handleReasonTypeChange(value);
+                    }} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select extension reason" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {extensionReasons.map((reason) => (
+                          <SelectItem key={reason.value} value={reason.value}>
+                            {reason.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Choose the reason for extending this user's time.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={timeExtensionForm.control}
                 name="days"
                 render={({ field }) => (
                   <FormItem>
@@ -915,14 +971,17 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                 name="reason"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Reason</FormLabel>
+                    <FormLabel>Additional Notes</FormLabel>
                     <FormControl>
                       <Textarea
                         {...field}
-                        placeholder="Reason for extension"
+                        placeholder="Additional details or notes"
                         className="min-h-[80px]"
                       />
                     </FormControl>
+                    <FormDescription>
+                      Optional additional details about this extension.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
