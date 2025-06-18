@@ -116,9 +116,9 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
     return lastSubmissionDate < twoWeeksAgo;
   };
 
-  // Function to check if a user is eligible for time extension (points > 200)
+  // Function to check if a user is eligible for time extension (points >= 60)
   const isEligibleForExtension = (user: User) => {
-    return (user.points || 0) > 200;
+    return (user.points || 0) >= 60;
   };
 
   useEffect(() => {
@@ -420,7 +420,7 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
     if (!isEligibleForExtension(user)) {
       toast({
         title: "Not Eligible",
-        description: "Only users with more than 200 points are eligible for time extension.",
+        description: "Only users with 60 points or more are eligible for time extension.",
         variant: "destructive",
       });
       return;
@@ -623,7 +623,7 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                   className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 mr-2"
                 />
                 <label htmlFor="eligible-extension" className="text-sm font-medium text-gray-700">
-                  Show eligible for extension ({">"}200 points)
+                  Show eligible for extension (≥60 points)
                 </label>
               </div>
               <Button
