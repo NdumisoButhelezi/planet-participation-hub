@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "@/lib/firebase";
@@ -46,6 +47,10 @@ const Leaderboard = () => {
     }
   };
 
+  const getUserDisplayName = (user: User) => {
+    return user.fullName || user.name || user.email;
+  };
+
   if (loading) {
     return <LoadingTips />;
   }
@@ -92,7 +97,7 @@ const Leaderboard = () => {
                   <td className="py-3 px-4 border-b text-sm text-gray-700">{index + 1}</td>
                   <td className="py-3 px-4 border-b text-sm text-gray-700 flex items-center gap-2">
                     <UserIcon className="h-4 w-4 text-gray-500" />
-                    {user.name}
+                    {getUserDisplayName(user)}
                   </td>
                   <td className="py-3 px-4 border-b text-sm text-gray-700">{user.points || 0}</td>
                 </tr>
