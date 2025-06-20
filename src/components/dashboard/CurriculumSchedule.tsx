@@ -1,6 +1,5 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, CheckCircle, XCircle, Clock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { CalendarDays, CheckCircle, XCircle, Clock, Eye, EyeOff, AlertCircle, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +17,7 @@ import { addDoc, collection, query, where, getDocs, onSnapshot, updateDoc, doc }
 import { User, Submission } from "@/types/user";
 import { WeeklySchedule, formatDate } from "@/utils/dateUtils";
 import { addDays, format, differenceInDays } from "date-fns";
+import FeedbackDialog from "./FeedbackDialog";
 
 interface WeeklyTask {
   week: number;
@@ -123,6 +123,9 @@ interface CurriculumScheduleProps {
 const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
+  const [selectedSubmissionId, setSelectedSubmissionId] = useState<string>("");
+  const [selectedSubmissionStatus, setSelectedSubmissionStatus] = useState<string>("");
   const [projectLink, setProjectLink] = useState("");
   const [socialMediaLink, setSocialMediaLink] = useState("");
   const [peersEngaged, setPeersEngaged] = useState("0");
@@ -343,6 +346,16 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
     return `Program Schedule (${startMonth} ${startYear} - ${endMonth} ${endYear})`;
   };
 
+  const handleViewFeedback = (week: number) => {
+    const submission = submissions.find(s => s.taskId === `week-${week}`);
+    if (submission) {
+      setSelectedSubmissionId(submission.id);
+      setSelectedSubmissionStatus(submission.status);
+      setSelectedWeek(week);
+      setIsFeedbackDialogOpen(true);
+    }
+  };
+
   useEffect(() => {
     if (selectedWeek && isDialogOpen) {
       const existingSubmission = submissions.find(
@@ -380,6 +393,7 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
               const isActive = week.week === nextActiveWeek;
               const weekDueDate = programSchedule?.weeklyDueDates.find(w => w.week === week.week)?.date;
               const daysRemaining = weekDueDate ? getDaysRemaining(weekDueDate) : 0;
+              const hasSubmission = submissions.find(s => s.taskId === `week-${week.week}`);
               
               return (
                 <div 
@@ -461,17 +475,31 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
                         </p>
                       )}
                     </div>
-                    <Button 
-                      variant={isActive ? "default" : "outline"}
-                      className={`w-full md:w-auto shrink-0 ${isActive ? "bg-amber-500 hover:bg-amber-600" : ""}`}
-                      onClick={() => {
-                        setSelectedWeek(week.week);
-                        setIsDialogOpen(true);
-                      }}
-                      disabled={status === "approved"}
-                    >
-                      {status === "approved" ? "Completed" : status === "pending" ? "Update Submission" : isActive ? "Submit Now" : "Submit Reflection"}
-                    </Button>
+                    <div className="flex flex-col gap-2 w-full md:w-auto">
+                      <Button 
+                        variant={isActive ? "default" : "outline"}
+                        className={`w-full md:w-auto shrink-0 ${isActive ? "bg-amber-500 hover:bg-amber-600" : ""}`}
+                        onClick={() => {
+                          setSelectedWeek(week.week);
+                          setIsDialogOpen(true);
+                        }}
+                        disabled={status === "approved"}
+                      >
+                        {status === "approved" ? "Completed" : status === "pending" ? "Update Submission" : isActive ? "Submit Now" : "Submit Reflection"}
+                      </Button>
+                      
+                      {hasSubmission && (
+                        <Button 
+                          variant="outline"
+                          size="sm"
+                          className="w-full md:w-auto flex items-center gap-2"
+                          onClick={() => handleViewFeedback(week.week)}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          View Feedback
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -535,6 +563,14 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <FeedbackDialog
+        open={isFeedbackDialogOpen}
+        onOpenChange={setIsFeedbackDialogOpen}
+        submissionId={selectedSubmissionId}
+        submissionStatus={selectedSubmissionStatus}
+        weekNumber={selectedWeek || 1}
+      />
     </>
   );
 };
