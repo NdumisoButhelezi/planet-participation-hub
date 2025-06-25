@@ -19,7 +19,7 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Connect With Us</h3>
             <div className="flex justify-center md:justify-start space-x-4">
               <a 
-                href="#" 
+                href="https://effervescent-kelpie-55bd4d.netlify.app/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -27,7 +27,7 @@ const Footer = () => {
                 <Globe className="w-6 h-6" />
               </a>
               <a 
-                href="#" 
+                href="https://github.com/NdumisoButhelezi" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
@@ -35,7 +35,7 @@ const Footer = () => {
                 <Github className="w-6 h-6" />
               </a>
               <a 
-                href="#" 
+                href="https://www.linkedin.com/company/planet-09-ai" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors"
