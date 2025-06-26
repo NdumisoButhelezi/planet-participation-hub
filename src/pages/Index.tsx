@@ -7,7 +7,6 @@ import FeatureSection from "@/components/home/FeatureSection";
 import ContactSection from "@/components/home/ContactSection";
 import CTASection from "@/components/home/CTASection";
 import Footer from "@/components/home/Footer";
-import ChatbotFAQ from "@/components/home/ChatbotFAQ";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { Helmet } from "react-helmet-async";
@@ -59,9 +58,6 @@ const Index = () => {
 
       {/* Footer */}
       <Footer />
-
-      {/* Chatbot FAQ */}
-      <ChatbotFAQ />
 
       <ProgramAgreementDialog 
         open={showAgreement}

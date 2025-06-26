@@ -11,6 +11,7 @@ import Leaderboard from "./pages/Leaderboard";
 import About from "./pages/About";
 import PublicShowcase from "./pages/PublicShowcase";
 import VerifyUser from "./pages/VerifyUser";
+import ChatbotFAQ from "@/components/home/ChatbotFAQ";
 import { Toaster } from "@/components/ui/toaster";
 import { useEffect } from "react";
 import "./App.css";
@@ -63,6 +64,9 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />
+        
+        {/* Global Chatbot - accessible on all pages */}
+        <ChatbotFAQ />
       </Router>
     </HelmetProvider>
   );
