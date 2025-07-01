@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Brain, AlertTriangle, XCircle, Mail, Key, Loader2, RocketIcon } from "lucide-react";
+import { Brain, AlertTriangle, XCircle, Mail, Key, Loader2, RocketIcon, Eye, EyeOff } from "lucide-react";
 import { collection, getDocs, query, where, setDoc, doc } from "firebase/firestore";
 import { User } from "@/types/user";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
@@ -198,14 +199,22 @@ const Login = () => {
             <div className="relative">
               <Key className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10"
+                className="w-full pl-10 pr-10"
                 required
                 disabled={isLoading}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={isLoading}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
             <div className="text-right">
               <a href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 transition-colors">
