@@ -36,6 +36,7 @@ export interface User {
   lastTimeExtensionDate?: Date | string;
   profile?: UserProfile;
   profileImage?: string; // Added profileImage property
+  needsPasswordReset?: boolean; // Flag for admin-initiated password reset
 }
 
 export interface UserWithAnalytics extends User {

@@ -280,17 +280,20 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
 
   const handlePasswordReset = async (user: User) => {
     try {
-      await sendPasswordResetEmail(auth, user.email);
+      // Set flag in Firestore to require password reset on next login
+      await updateDoc(doc(db, "users", user.id), {
+        needsPasswordReset: true
+      });
       
       toast({
-        title: "Password Reset Email Sent",
-        description: `A password reset email has been sent to ${user.email}.`,
+        title: "Password Reset Initiated",
+        description: `${user.fullName || user.email} will be prompted to create a new password on their next login.`,
       });
     } catch (error) {
-      console.error("Error sending password reset email:", error);
+      console.error("Error setting password reset flag:", error);
       toast({
         title: "Error",
-        description: "Failed to send password reset email",
+        description: "Failed to initiate password reset",
         variant: "destructive",
       });
     }

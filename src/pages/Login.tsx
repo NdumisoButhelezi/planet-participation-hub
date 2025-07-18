@@ -1,14 +1,15 @@
 
 import { useState } from "react";
 import { auth, db } from "@/lib/firebase";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, updatePassword } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Brain, AlertTriangle, XCircle, Mail, Key, Loader2, RocketIcon, Eye, EyeOff } from "lucide-react";
-import { collection, getDocs, query, where, setDoc, doc } from "firebase/firestore";
+import { collection, getDocs, query, where, setDoc, doc, updateDoc } from "firebase/firestore";
 import { User } from "@/types/user";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -18,6 +19,10 @@ const Login = () => {
   const [error, setError] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
   const [currentTip, setCurrentTip] = useState(0);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -50,6 +55,15 @@ const Login = () => {
         
         if (!userSnapshot.empty) {
           const userData = userSnapshot.docs[0].data() as User;
+          
+          // Check if user needs to reset password
+          if (userData.needsPasswordReset) {
+            setCurrentUser(user);
+            setShowPasswordReset(true);
+            setIsLoading(false);
+            clearInterval(tipInterval);
+            return;
+          }
           
           toast({
             title: "Welcome back!",
@@ -121,6 +135,62 @@ const Login = () => {
       });
     } finally {
       clearInterval(tipInterval);
+      setIsLoading(false);
+    }
+  };
+
+  const handlePasswordResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      setError("Password must be at least 6 characters long");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Update the user's password
+      await updatePassword(currentUser, newPassword);
+      
+      // Remove the password reset flag from Firestore
+      const userQuery = query(collection(db, "users"), where("id", "==", currentUser.uid));
+      const userSnapshot = await getDocs(userQuery);
+      
+      if (!userSnapshot.empty) {
+        await updateDoc(doc(db, "users", currentUser.uid), {
+          needsPasswordReset: false
+        });
+        
+        const userData = userSnapshot.docs[0].data() as User;
+        
+        toast({
+          title: "Password Updated",
+          description: "Your password has been successfully updated.",
+        });
+
+        // Redirect based on user role
+        if (userData.isAdmin) {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
+      }
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      setError("Failed to update password. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to update password. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -248,6 +318,74 @@ const Login = () => {
           </div>
         </div>
       </div>
+
+      {/* Password Reset Dialog */}
+      <Dialog open={showPasswordReset} onOpenChange={() => {}}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Password</DialogTitle>
+            <DialogDescription>
+              Your administrator has requested that you create a new password.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+              <div className="flex items-start">
+                <AlertTriangle className="h-5 w-5 text-red-500 mr-3 mt-0.5" />
+                <p className="text-sm font-medium text-red-800">{error}</p>
+              </div>
+            </div>
+          )}
+          
+          <form onSubmit={handlePasswordResetSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <div className="relative">
+                <Key className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  type="password"
+                  placeholder="New Password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full pl-10"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="relative">
+                <Key className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  type="password"
+                  placeholder="Confirm New Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full pl-10"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Update Password"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
