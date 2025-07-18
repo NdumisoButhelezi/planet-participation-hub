@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { User, SkillLevel } from "@/types/user";
-import { Shield, Trash2, Search, Filter, AlertTriangle, Clock, Plus, Minus } from "lucide-react";
+import { Shield, Trash2, Search, Filter, AlertTriangle, Clock, Plus, Minus, KeyRound } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -274,6 +276,24 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
   const openDeleteDialog = (user: User) => {
     setUserToDelete(user);
     setIsDeleteDialogOpen(true);
+  };
+
+  const handlePasswordReset = async (user: User) => {
+    try {
+      await sendPasswordResetEmail(auth, user.email);
+      
+      toast({
+        title: "Password Reset Email Sent",
+        description: `A password reset email has been sent to ${user.email}.`,
+      });
+    } catch (error) {
+      console.error("Error sending password reset email:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send password reset email",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetFilters = () => {
@@ -772,6 +792,14 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
                         {isRestoring[user.id] ? "Restoring..." : "Restore Points"}
                       </Button>
                     )}
+                    <Button 
+                      variant="outline"
+                      onClick={() => handlePasswordReset(user)}
+                      className="flex items-center gap-2"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                      Reset Password
+                    </Button>
                     <Button 
                       variant={user.accountLocked ? "default" : "outline"}
                       onClick={() => toggleLockAccount(user)}
