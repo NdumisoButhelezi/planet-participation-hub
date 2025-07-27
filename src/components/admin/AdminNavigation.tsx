@@ -1,10 +1,10 @@
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Users, CalendarDays, FileText, Clipboard, Activity, QrCode } from "lucide-react";
+import { Users, CalendarDays, FileText, Clipboard, Activity, QrCode, Trophy } from "lucide-react";
 
 interface AdminNavigationProps {
-  currentView: 'users' | 'events' | 'submissions' | 'registrations' | 'analytics' | 'verification';
-  onViewChange: (view: 'users' | 'events' | 'submissions' | 'registrations' | 'analytics' | 'verification') => void;
+  currentView: 'users' | 'events' | 'submissions' | 'registrations' | 'analytics' | 'verification' | 'points-audit';
+  onViewChange: (view: 'users' | 'events' | 'submissions' | 'registrations' | 'analytics' | 'verification' | 'points-audit') => void;
 }
 
 const AdminNavigation = ({ currentView, onViewChange }: AdminNavigationProps) => {
@@ -16,7 +16,8 @@ const AdminNavigation = ({ currentView, onViewChange }: AdminNavigationProps) =>
     { id: 'submissions', label: 'Submissions', icon: FileText },
     { id: 'registrations', label: 'Registrations', icon: Clipboard },
     { id: 'analytics', label: 'Analytics', icon: Activity },
-    { id: 'verification', label: 'Verification', icon: QrCode }
+    { id: 'verification', label: 'Verification', icon: QrCode },
+    { id: 'points-audit', label: 'Points Audit', icon: Trophy }
   ];
   
   return (

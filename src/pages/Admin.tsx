@@ -14,6 +14,7 @@ import SubmissionsManagement from "@/components/admin/SubmissionsManagement";
 import UserAnalytics from "@/components/admin/UserAnalytics";
 import AdminNavigation from "@/components/admin/AdminNavigation";
 import QRScanner from "@/components/admin/QRScanner";
+import PointsAudit from "@/components/admin/PointsAudit";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { responsiveClasses } from "@/utils/responsiveUtils";
@@ -24,7 +25,7 @@ const Admin = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [showEventForm, setShowEventForm] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [currentView, setCurrentView] = useState<'users' | 'events' | 'submissions' | 'registrations' | 'analytics' | 'verification'>('users');
+  const [currentView, setCurrentView] = useState<'users' | 'events' | 'submissions' | 'registrations' | 'analytics' | 'verification' | 'points-audit'>('users');
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -279,6 +280,13 @@ const Admin = () => {
         return (
           <div className="bg-white/70 backdrop-blur-md rounded-lg shadow-lg ice-border p-4">
             <QRScanner />
+          </div>
+        );
+
+      case 'points-audit':
+        return (
+          <div className="bg-white/70 backdrop-blur-md rounded-lg shadow-lg ice-border p-4">
+            <PointsAudit users={users} submissions={submissions} />
           </div>
         );
 
