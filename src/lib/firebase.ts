@@ -15,7 +15,15 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+
+// Initialize analytics with error handling
+let analytics;
+try {
+  analytics = getAnalytics(app);
+} catch (error) {
+  console.warn("Analytics initialization failed:", error);
+}
+
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
