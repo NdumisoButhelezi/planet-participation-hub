@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Minus, Trophy, FileText, User as UserIcon, History, Download } from "lucide-react";
+import { Search, Plus, Minus, Trophy, FileText, User as UserIcon, History, Download, RefreshCw } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { doc, updateDoc, addDoc, collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
@@ -17,19 +17,36 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
+import { 
+  awardPoints, 
+  getUserPointBreakdown, 
+  syncProfileCompletionPoints,
+  POINT_VALUES 
+} from "@/lib/pointsSystem";
 
 interface PointsAuditProps {
   users: User[];
   submissions: Submission[];
 }
 
+interface UserPointBreakdown {
+  totalPoints: number;
+  profileCompletionPoints: number;
+  submissionPoints: number;
+  eventAttendancePoints: number;
+  adminAdjustmentPoints: number;
+  bonusPoints: number;
+  transactions: any[];
+}
+
 interface PointAuditEntry {
   id?: string;
   userId: string;
   pointsChange: number;
-  source: "profile_completion" | "submission" | "admin_adjustment" | "event_attendance" | "bonus";
+  source: "profile_completion" | "submission_approved" | "submission_rejected" | "event_attendance" | "admin_adjustment" | "bonus";
   reason: string;
   submissionId?: string;
+  eventId?: string;
   adminId?: string;
   timestamp: Date;
   metadata?: Record<string, any>;
@@ -44,9 +61,11 @@ const adjustPointsSchema = z.object({
 const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userPointBreakdown, setUserPointBreakdown] = useState<UserPointBreakdown | null>(null);
   const [auditEntries, setAuditEntries] = useState<PointAuditEntry[]>([]);
   const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
   const adjustForm = useForm<z.infer<typeof adjustPointsSchema>>({
@@ -58,14 +77,18 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
     },
   });
 
-  // Calculate point breakdown for each user
+  // Enhanced user point calculations with real data
   const usersWithPointBreakdown = useMemo(() => {
     return users.map(user => {
-      const userSubmissions = submissions.filter(sub => sub.userId === user.id && sub.status === "approved");
-      // Since submissions don't have points field, we'll assume 10 points per approved submission
-      const submissionPoints = userSubmissions.length * 10;
+      const userSubmissions = submissions.filter(sub => sub.userId === user.id);
+      const approvedSubmissions = userSubmissions.filter(sub => sub.status === "approved");
+      const rejectedSubmissions = userSubmissions.filter(sub => sub.status === "rejected");
       
-      // Calculate profile completion points using existing User fields
+      // Calculate expected points based on POINT_VALUES
+      const expectedSubmissionPoints = (approvedSubmissions.length * POINT_VALUES.SUBMISSION_APPROVED) + 
+                                      (rejectedSubmissions.length * POINT_VALUES.SUBMISSION_REJECTED);
+      
+      // Calculate profile completion points using the proper function
       const profileFields = [
         user.fullName, 
         user.studentNumber, 
@@ -73,21 +96,27 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
         user.yearOfStudy,
         user.profile?.linkedinProfile,
         user.profile?.githubProfile,
-        user.profile?.aiInterestArea
+        user.profile?.aiInterestArea,
+        user.profile?.phoneNumber,
+        user.motivation,
       ];
       const completedFields = profileFields.filter(field => field && field.trim() !== "").length;
-      const profileCompletionPoints = Math.floor((completedFields / profileFields.length) * 50); // Max 50 points for complete profile
+      const expectedProfilePoints = Math.floor((completedFields / profileFields.length) * POINT_VALUES.PROFILE_COMPLETION_MAX);
       
-      const totalCalculatedPoints = submissionPoints + profileCompletionPoints;
-      const pointDiscrepancy = (user.points || 0) - totalCalculatedPoints;
+      const totalExpectedPoints = expectedSubmissionPoints + expectedProfilePoints;
+      const actualPoints = user.points || 0;
+      const pointDiscrepancy = actualPoints - totalExpectedPoints;
 
       return {
         ...user,
-        submissionPoints,
-        profileCompletionPoints,
-        totalCalculatedPoints,
+        expectedSubmissionPoints,
+        expectedProfilePoints,
+        totalExpectedPoints,
+        actualPoints,
         pointDiscrepancy,
         submissionCount: userSubmissions.length,
+        approvedCount: approvedSubmissions.length,
+        rejectedCount: rejectedSubmissions.length,
       };
     });
   }, [users, submissions]);
@@ -103,38 +132,51 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
     );
   }, [usersWithPointBreakdown, searchQuery]);
 
-  // Load audit entries for selected user
+  // Load detailed point breakdown for selected user
   useEffect(() => {
     if (selectedUser) {
-      loadAuditEntries(selectedUser.id);
+      loadUserPointBreakdown(selectedUser.id);
     }
   }, [selectedUser]);
 
-  const loadAuditEntries = async (userId: string) => {
+  const loadUserPointBreakdown = async (userId: string) => {
     try {
       setIsLoading(true);
-      const auditQuery = query(
-        collection(db, "pointsAudit"),
-        where("userId", "==", userId),
-        orderBy("timestamp", "desc")
-      );
-      const snapshot = await getDocs(auditQuery);
-      const entries = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        timestamp: doc.data().timestamp?.toDate() || new Date(),
-      })) as PointAuditEntry[];
-      
-      setAuditEntries(entries);
+      const breakdown = await getUserPointBreakdown(userId);
+      setUserPointBreakdown(breakdown);
+      setAuditEntries(breakdown.transactions);
     } catch (error) {
-      console.error("Error loading audit entries:", error);
+      console.error("Error loading user point breakdown:", error);
       toast({
         title: "Error",
-        description: "Failed to load audit entries",
+        description: "Failed to load point breakdown",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const refreshUserData = async () => {
+    if (!selectedUser) return;
+    
+    setIsRefreshing(true);
+    try {
+      await syncProfileCompletionPoints(selectedUser.id);
+      await loadUserPointBreakdown(selectedUser.id);
+      toast({
+        title: "Success",
+        description: "Points synchronized successfully",
+      });
+    } catch (error) {
+      console.error("Error refreshing user data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh user data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -144,49 +186,41 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
     try {
       setIsLoading(true);
       const pointsChange = Number(data.points);
-      let newPoints = selectedUser.points || 0;
-
+      
+      let actualPointsChange: number;
       switch (data.type) {
         case "add":
-          newPoints += pointsChange;
+          actualPointsChange = pointsChange;
           break;
         case "subtract":
-          newPoints -= pointsChange;
+          actualPointsChange = -pointsChange;
           break;
         case "set":
-          newPoints = pointsChange;
+          const currentPoints = selectedUser.points || 0;
+          actualPointsChange = pointsChange - currentPoints;
           break;
+        default:
+          actualPointsChange = 0;
       }
 
-      // Ensure points don't go negative
-      newPoints = Math.max(0, newPoints);
-
-      // Update user points
-      await updateDoc(doc(db, "users", selectedUser.id), {
-        points: newPoints,
-      });
-
-      // Create audit entry
-      const auditEntry: Omit<PointAuditEntry, "id"> = {
-        userId: selectedUser.id,
-        pointsChange: data.type === "set" ? newPoints - (selectedUser.points || 0) : 
-                     data.type === "add" ? pointsChange : -pointsChange,
-        source: "admin_adjustment",
-        reason: data.reason,
-        adminId: "current-admin", // Replace with actual admin ID
-        timestamp: new Date(),
-        metadata: {
+      // Use the points system to award/adjust points
+      await awardPoints(
+        selectedUser.id,
+        actualPointsChange,
+        "admin_adjustment",
+        data.reason,
+        {
           adjustmentType: data.type,
-          previousPoints: selectedUser.points || 0,
-          newPoints: newPoints,
-        },
-      };
-
-      await addDoc(collection(db, "pointsAudit"), auditEntry);
+          adminId: "current-admin", // Replace with actual admin ID
+        }
+      );
 
       // Update local state
+      const newPoints = Math.max(0, (selectedUser.points || 0) + actualPointsChange);
       setSelectedUser({ ...selectedUser, points: newPoints });
-      await loadAuditEntries(selectedUser.id);
+      
+      // Refresh the point breakdown
+      await loadUserPointBreakdown(selectedUser.id);
 
       toast({
         title: "Success",
@@ -322,8 +356,8 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
                   
                   <div className="mt-2 text-xs text-muted-foreground">
                     <div className="flex justify-between">
-                      <span>Profile: {user.profileCompletionPoints} pts</span>
-                      <span>Submissions: {user.submissionPoints} pts</span>
+                      <span>Expected Profile: {user.expectedProfilePoints} pts</span>
+                      <span>Expected Submissions: {user.expectedSubmissionPoints} pts</span>
                     </div>
                   </div>
                 </div>
@@ -342,6 +376,16 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
               </span>
               {selectedUser && (
                 <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={refreshUserData}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-1"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    Sync Points
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -426,15 +470,23 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
           <CardContent>
             {selectedUser ? (
               <div className="space-y-4">
-                {/* Points Summary */}
-                <div className="grid grid-cols-2 gap-4">
+                {/* Enhanced Points Summary */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Current Points</p>
-                    <p className="text-2xl font-bold">{selectedUser.points || 0}</p>
+                    <p className="text-sm text-muted-foreground">Total Points</p>
+                    <p className="text-2xl font-bold">{userPointBreakdown?.totalPoints || selectedUser.points || 0}</p>
                   </div>
                   <div className="p-3 bg-muted/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Total Submissions</p>
-                    <p className="text-2xl font-bold">{submissions.filter(sub => sub.userId === selectedUser.id).length}</p>
+                    <p className="text-sm text-muted-foreground">Profile</p>
+                    <p className="text-xl font-bold text-blue-600">{userPointBreakdown?.profileCompletionPoints || 0}</p>
+                  </div>
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Submissions</p>
+                    <p className="text-xl font-bold text-green-600">{userPointBreakdown?.submissionPoints || 0}</p>
+                  </div>
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Events</p>
+                    <p className="text-xl font-bold text-yellow-600">{userPointBreakdown?.eventAttendancePoints || 0}</p>
                   </div>
                 </div>
 
