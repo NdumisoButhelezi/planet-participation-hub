@@ -150,19 +150,26 @@ export async function syncProfileCompletionPoints(userId: string): Promise<void>
 export async function awardSubmissionPoints(
   userId: string, 
   submissionId: string, 
-  approved: boolean
+  approved: boolean,
+  submissionDetails?: any
 ): Promise<void> {
   const pointsChange = approved ? POINT_VALUES.SUBMISSION_APPROVED : POINT_VALUES.SUBMISSION_REJECTED;
   const reason = approved 
-    ? `Submission approved: ${submissionId}`
-    : `Submission rejected: ${submissionId}`;
+    ? `Submission approved - ${pointsChange > 0 ? '+' : ''}${pointsChange} points`
+    : `Submission rejected - ${pointsChange} points penalty`;
 
   await awardPoints(
     userId,
     pointsChange,
     approved ? "submission_approved" : "submission_rejected",
     reason,
-    { submissionId, approved }
+    { 
+      submissionId, 
+      approved,
+      submissionType: submissionDetails?.taskId?.includes('playlist') ? 'playlist' : 'weekly',
+      projectLink: submissionDetails?.projectLink,
+      reflection: submissionDetails?.learningReflection?.substring(0, 100) + '...',
+    }
   );
 }
 

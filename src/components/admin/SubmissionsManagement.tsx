@@ -61,7 +61,7 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
       }
 
       // Award points through the audit system
-      await awardSubmissionPoints(submission.userId, submission.id, status === "approved");
+      await awardSubmissionPoints(submission.userId, submission.id, status === "approved", submission);
 
       const submissionRef = doc(db, "submissions", submissionId);
       await updateDoc(submissionRef, {

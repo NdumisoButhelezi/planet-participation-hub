@@ -306,7 +306,8 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
     switch (source) {
       case "profile_completion":
         return <UserIcon className="h-4 w-4" />;
-      case "submission":
+      case "submission_approved":
+      case "submission_rejected":
         return <FileText className="h-4 w-4" />;
       case "admin_adjustment":
         return <Trophy className="h-4 w-4" />;
@@ -321,8 +322,10 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
     switch (source) {
       case "profile_completion":
         return "bg-blue-100 text-blue-800";
-      case "submission":
+      case "submission_approved":
         return "bg-green-100 text-green-800";
+      case "submission_rejected":
+        return "bg-red-100 text-red-800";
       case "admin_adjustment":
         return "bg-purple-100 text-purple-800";
       case "event_attendance":
@@ -544,61 +547,88 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
                               {getSourceIcon(entry.source)}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">
-                                  {entry.pointsChange > 0 ? "+" : ""}{entry.pointsChange} points
-                                </p>
-                                <Badge variant="outline" className="text-xs">
-                                  {entry.source.replace("_", " ")}
-                                </Badge>
-                              </div>
+                               <div className="flex items-center justify-between">
+                                 <p className="text-sm font-medium">
+                                   {entry.pointsChange > 0 ? "+" : ""}{entry.pointsChange} points
+                                 </p>
+                                 <div className="flex gap-1">
+                                   <Badge variant="outline" className="text-xs">
+                                     {entry.source.replace(/_/g, " ")}
+                                   </Badge>
+                                   {entry.metadata?.submissionType && (
+                                     <Badge variant="secondary" className="text-xs">
+                                       {entry.metadata.submissionType}
+                                     </Badge>
+                                   )}
+                                 </div>
+                               </div>
                               <p className="text-xs text-muted-foreground mt-1">
                                 {entry.reason}
                               </p>
                               
-                              {/* Enhanced Submission Details */}
-                              {submission && (
-                                <div className="mt-2 p-2 bg-muted/30 rounded border text-xs space-y-1">
-                                  <div className="font-medium text-primary">Submission Details:</div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground">Project:</span>
-                                    <a 
-                                      href={submission.projectLink} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline flex items-center gap-1"
-                                    >
-                                      View Project <ExternalLink className="h-3 w-3" />
-                                    </a>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-muted-foreground">Social Media:</span>
-                                    <a 
-                                      href={submission.socialMediaLink} 
-                                      target="_blank" 
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline flex items-center gap-1"
-                                    >
-                                      View Post <ExternalLink className="h-3 w-3" />
-                                    </a>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Peers Engaged:</span> {submission.peersEngaged}
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">Status:</span> 
-                                    <Badge variant={submission.status === 'approved' ? 'default' : submission.status === 'rejected' ? 'destructive' : 'secondary'} className="text-xs ml-1">
-                                      {submission.status}
-                                    </Badge>
-                                  </div>
-                                  <div className="max-w-full">
-                                    <span className="text-muted-foreground">Reflection:</span>
-                                    <p className="italic text-xs mt-1 line-clamp-2">
-                                      "{submission.learningReflection}"
-                                    </p>
-                                  </div>
-                                </div>
-                              )}
+                               {/* Enhanced Submission Details */}
+                               {(submission || entry.metadata?.projectLink) && (
+                                 <div className="mt-2 p-2 bg-muted/30 rounded border text-xs space-y-1">
+                                   <div className="font-medium text-primary">Submission Details:</div>
+                                   
+                                   {/* Project Link */}
+                                   {(submission?.projectLink || entry.metadata?.projectLink) && (
+                                     <div className="flex items-center gap-2">
+                                       <span className="text-muted-foreground">Project:</span>
+                                       <a 
+                                         href={submission?.projectLink || entry.metadata?.projectLink} 
+                                         target="_blank" 
+                                         rel="noopener noreferrer"
+                                         className="text-blue-600 hover:underline flex items-center gap-1"
+                                       >
+                                         View Project <ExternalLink className="h-3 w-3" />
+                                       </a>
+                                     </div>
+                                   )}
+                                   
+                                   {/* Social Media Link */}
+                                   {submission?.socialMediaLink && (
+                                     <div className="flex items-center gap-2">
+                                       <span className="text-muted-foreground">Social Media:</span>
+                                       <a 
+                                         href={submission.socialMediaLink} 
+                                         target="_blank" 
+                                         rel="noopener noreferrer"
+                                         className="text-blue-600 hover:underline flex items-center gap-1"
+                                       >
+                                         View Post <ExternalLink className="h-3 w-3" />
+                                       </a>
+                                     </div>
+                                   )}
+                                   
+                                   {/* Peers Engaged */}
+                                   {submission?.peersEngaged && (
+                                     <div>
+                                       <span className="text-muted-foreground">Peers Engaged:</span> {submission.peersEngaged}
+                                     </div>
+                                   )}
+                                   
+                                   {/* Status */}
+                                   {submission?.status && (
+                                     <div>
+                                       <span className="text-muted-foreground">Status:</span> 
+                                       <Badge variant={submission.status === 'approved' ? 'default' : submission.status === 'rejected' ? 'destructive' : 'secondary'} className="text-xs ml-1">
+                                         {submission.status}
+                                       </Badge>
+                                     </div>
+                                   )}
+                                   
+                                   {/* Reflection */}
+                                   {(submission?.learningReflection || entry.metadata?.reflection) && (
+                                     <div className="max-w-full">
+                                       <span className="text-muted-foreground">Reflection:</span>
+                                       <p className="italic text-xs mt-1 line-clamp-2">
+                                         "{submission?.learningReflection || entry.metadata?.reflection}"
+                                       </p>
+                                     </div>
+                                   )}
+                                 </div>
+                               )}
                               
                               <p className="text-xs text-muted-foreground mt-1">
                                 {format(entry.timestamp, "MMM dd, yyyy 'at' HH:mm")}
