@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Play, List, Trash2, Filter, Search, MessageSquare, Clock } from "lucide-react";
 import { doc, updateDoc, getDoc, deleteDoc, addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { awardSubmissionPoints } from "@/lib/pointsSystem";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -59,18 +60,8 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
         throw new Error("User not found");
       }
 
-      const userData = userDoc.data() as User;
-      
-      let pointsChange = 0;
-      if (status === "approved") {
-        pointsChange = submission.taskId.includes("playlist") ? 30 : 50;
-      } else {
-        pointsChange = submission.taskId.includes("playlist") ? -30 : -50;
-      }
-
-      await updateDoc(userRef, {
-        points: (userData.points || 0) + pointsChange
-      });
+      // Award points through the audit system
+      await awardSubmissionPoints(submission.userId, submission.id, status === "approved");
 
       const submissionRef = doc(db, "submissions", submissionId);
       await updateDoc(submissionRef, {
@@ -93,6 +84,7 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
       );
       onSubmissionUpdate(updatedSubmissions);
       
+      const pointsChange = status === "approved" ? 10 : -5; // Using standard point values
       toast({
         title: "Success",
         description: `Submission ${status} successfully (${pointsChange > 0 ? '+' : ''}${pointsChange} points)${feedback.trim() ? ' with feedback' : ''}`,

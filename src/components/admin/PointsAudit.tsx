@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Plus, Minus, Trophy, FileText, User as UserIcon, History, Download, RefreshCw } from "lucide-react";
+import { Search, Plus, Minus, Trophy, FileText, User as UserIcon, History, Download, RefreshCw, ExternalLink } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { doc, updateDoc, addDoc, collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { doc, updateDoc, addDoc, collection, query, where, getDocs, orderBy, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -63,6 +63,7 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [userPointBreakdown, setUserPointBreakdown] = useState<UserPointBreakdown | null>(null);
   const [auditEntries, setAuditEntries] = useState<PointAuditEntry[]>([]);
+  const [submissionDetails, setSubmissionDetails] = useState<Record<string, any>>({});
   const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -145,6 +146,41 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
       const breakdown = await getUserPointBreakdown(userId);
       setUserPointBreakdown(breakdown);
       setAuditEntries(breakdown.transactions);
+      
+      // Load submission details for transactions that reference submissions
+      const submissionIds = breakdown.transactions
+        .filter(t => t.submissionId)
+        .map(t => t.submissionId as string);
+      
+      if (submissionIds.length > 0) {
+        const submissionDetailsMap: Record<string, any> = {};
+        
+        // Try to get from local submissions first
+        submissionIds.forEach(id => {
+          const localSubmission = submissions.find(s => s.id === id);
+          if (localSubmission) {
+            submissionDetailsMap[id] = localSubmission;
+          }
+        });
+        
+        // For any missing submissions, fetch from Firebase
+        const missingIds = submissionIds.filter(id => !submissionDetailsMap[id]);
+        for (const submissionId of missingIds) {
+          try {
+            const submissionDoc = await getDoc(doc(db, "submissions", submissionId));
+            if (submissionDoc.exists()) {
+              submissionDetailsMap[submissionId] = {
+                id: submissionDoc.id,
+                ...submissionDoc.data()
+              };
+            }
+          } catch (error) {
+            console.warn(`Could not fetch submission ${submissionId}:`, error);
+          }
+        }
+        
+        setSubmissionDetails(submissionDetailsMap);
+      }
     } catch (error) {
       console.error("Error loading user point breakdown:", error);
       toast({
@@ -499,29 +535,78 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
                     </div>
                   ) : auditEntries.length > 0 ? (
                     <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {auditEntries.map((entry) => (
-                        <div key={entry.id} className="flex items-start gap-3 p-3 bg-background rounded-lg border">
-                          <div className={`p-1 rounded-full ${getSourceColor(entry.source)}`}>
-                            {getSourceIcon(entry.source)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm font-medium">
-                                {entry.pointsChange > 0 ? "+" : ""}{entry.pointsChange} points
-                              </p>
-                              <Badge variant="outline" className="text-xs">
-                                {entry.source.replace("_", " ")}
-                              </Badge>
+                      {auditEntries.map((entry) => {
+                        const submission = entry.submissionId ? submissionDetails[entry.submissionId] : null;
+                        
+                        return (
+                          <div key={entry.id} className="flex items-start gap-3 p-3 bg-background rounded-lg border">
+                            <div className={`p-1 rounded-full ${getSourceColor(entry.source)}`}>
+                              {getSourceIcon(entry.source)}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {entry.reason}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {format(entry.timestamp, "MMM dd, yyyy 'at' HH:mm")}
-                            </p>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">
+                                  {entry.pointsChange > 0 ? "+" : ""}{entry.pointsChange} points
+                                </p>
+                                <Badge variant="outline" className="text-xs">
+                                  {entry.source.replace("_", " ")}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {entry.reason}
+                              </p>
+                              
+                              {/* Enhanced Submission Details */}
+                              {submission && (
+                                <div className="mt-2 p-2 bg-muted/30 rounded border text-xs space-y-1">
+                                  <div className="font-medium text-primary">Submission Details:</div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">Project:</span>
+                                    <a 
+                                      href={submission.projectLink} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:underline flex items-center gap-1"
+                                    >
+                                      View Project <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">Social Media:</span>
+                                    <a 
+                                      href={submission.socialMediaLink} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:underline flex items-center gap-1"
+                                    >
+                                      View Post <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Peers Engaged:</span> {submission.peersEngaged}
+                                  </div>
+                                  <div>
+                                    <span className="text-muted-foreground">Status:</span> 
+                                    <Badge variant={submission.status === 'approved' ? 'default' : submission.status === 'rejected' ? 'destructive' : 'secondary'} className="text-xs ml-1">
+                                      {submission.status}
+                                    </Badge>
+                                  </div>
+                                  <div className="max-w-full">
+                                    <span className="text-muted-foreground">Reflection:</span>
+                                    <p className="italic text-xs mt-1 line-clamp-2">
+                                      "{submission.learningReflection}"
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {format(entry.timestamp, "MMM dd, yyyy 'at' HH:mm")}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground">No audit entries found.</p>
