@@ -199,6 +199,7 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
     setIsRefreshing(true);
     try {
       await syncProfileCompletionPoints(selectedUser.id);
+      await migrateHistoricalSubmissions(selectedUser.id);
       await loadUserPointBreakdown(selectedUser.id);
       toast({
         title: "Success",
@@ -213,6 +214,54 @@ const PointsAudit = ({ users, submissions }: PointsAuditProps) => {
       });
     } finally {
       setIsRefreshing(false);
+    }
+  };
+
+  const migrateHistoricalSubmissions = async (userId: string) => {
+    try {
+      // Get user's submissions
+      const userSubmissions = submissions.filter(sub => sub.userId === userId);
+      
+      // Get existing audit entries for this user's submissions
+      const auditQuery = query(
+        collection(db, "pointsAudit"),
+        where("userId", "==", userId),
+        where("source", "in", ["submission_approved", "submission_rejected"])
+      );
+      const auditSnapshot = await getDocs(auditQuery);
+      const existingSubmissionIds = new Set(
+        auditSnapshot.docs.map(doc => doc.data().submissionId).filter(Boolean)
+      );
+
+      // Find submissions that need audit entries
+      const submissionsNeedingAudit = userSubmissions.filter(sub => 
+        (sub.status === "approved" || sub.status === "rejected") && 
+        !existingSubmissionIds.has(sub.id)
+      );
+
+      // Create audit entries for missing submissions
+      for (const submission of submissionsNeedingAudit) {
+        await awardPoints(
+          userId,
+          submission.status === "approved" ? POINT_VALUES.SUBMISSION_APPROVED : POINT_VALUES.SUBMISSION_REJECTED,
+          submission.status === "approved" ? "submission_approved" : "submission_rejected",
+          `Historical ${submission.status} submission - ${submission.taskId}`,
+          { 
+            submissionId: submission.id,
+            approved: submission.status === "approved",
+            submissionType: submission.taskId?.includes('playlist') ? 'playlist' : 'weekly',
+            projectLink: submission.projectLink,
+            reflection: submission.learningReflection?.substring(0, 100) + '...',
+            migrated: true
+          }
+        );
+      }
+
+      if (submissionsNeedingAudit.length > 0) {
+        console.log(`Migrated ${submissionsNeedingAudit.length} historical submissions for user ${userId}`);
+      }
+    } catch (error) {
+      console.error("Error migrating historical submissions:", error);
     }
   };
 
