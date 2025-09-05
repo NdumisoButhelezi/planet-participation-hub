@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import ProgramAgreementDialog from "@/components/shared/ProgramAgreementDialog";
 import Navbar from "@/components/home/Navbar";
 import HeroSection from "@/components/home/HeroSection";
+import ChallengeSection from "@/components/home/ChallengeSection";
 import FeatureSection from "@/components/home/FeatureSection";
 import ContactSection from "@/components/home/ContactSection";
 import CTASection from "@/components/home/CTASection";
@@ -46,6 +47,9 @@ const Index = () => {
 
       {/* Hero Section */}
       <HeroSection onShowAgreement={() => setShowAgreement(true)} />
+
+      {/* Challenge Section */}
+      <ChallengeSection />
 
       {/* Features Section */}
       <FeatureSection />
