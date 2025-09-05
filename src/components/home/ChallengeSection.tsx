@@ -75,7 +75,7 @@ const ChallengeSection = () => {
                     <Calendar className="w-6 h-6 text-primary" />
                     <div>
                       <div className="font-semibold text-foreground">Program Runs</div>
-                      <div className="text-muted-foreground">March – May 2025</div>
+                      <div className="text-muted-foreground">March – November 2025</div>
                     </div>
                   </div>
 
