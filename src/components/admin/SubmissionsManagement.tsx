@@ -134,35 +134,24 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
       const user = users.find(u => u.id === submission.userId);
       const displayName = user?.fullName || user?.profile?.fullName || user?.email || "Student";
       
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const response = await fetch('/api/generate-feedback', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer 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',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'openrouter/sonoma-sky-alpha',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a helpful and encouraging coding tutor providing feedback on student learning reflections. Your responses should be warm, supportive, and educational. Keep responses concise (2-3 sentences). Focus on celebrating their progress, acknowledging specific learning points they mentioned, and offering gentle encouragement for continued growth. Always maintain a positive, mentor-like tone.'
-            },
-            {
-              role: 'user',
-              content: `A student named ${displayName} submitted this learning reflection for their coding project: "${submission.learningReflection}". Please provide encouraging feedback that acknowledges their specific learning achievements and motivates them to continue growing.`
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 200
+          studentName: displayName,
+          learningReflection: submission.learningReflection
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate feedback');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate feedback');
       }
 
       const data = await response.json();
-      const generatedFeedback = data.choices[0]?.message?.content || '';
+      const generatedFeedback = data.feedback || '';
       
       setFeedback(generatedFeedback);
       
