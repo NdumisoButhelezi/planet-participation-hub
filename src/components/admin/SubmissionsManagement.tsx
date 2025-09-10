@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { Sparkles } from "lucide-react";
 
 interface SubmissionsManagementProps {
   submissions: Submission[];
@@ -28,6 +29,7 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
   const [feedback, setFeedback] = useState("");
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
 
   const playlistSubmissions = submissions.filter(sub => sub.taskId.includes("playlist"));
   const weeklySubmissions = submissions.filter(sub => !sub.taskId.includes("playlist"));
@@ -123,6 +125,60 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
         description: "Failed to delete submission",
         variant: "destructive",
       });
+    }
+  };
+
+  const generateAIFeedback = async (submission: Submission) => {
+    setIsGeneratingFeedback(true);
+    try {
+      const user = users.find(u => u.id === submission.userId);
+      const displayName = user?.fullName || user?.profile?.fullName || user?.email || "Student";
+      
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer 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',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'openrouter/sonoma-sky-alpha',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a helpful and encouraging coding tutor providing feedback on student learning reflections. Your responses should be warm, supportive, and educational. Keep responses concise (2-3 sentences). Focus on celebrating their progress, acknowledging specific learning points they mentioned, and offering gentle encouragement for continued growth. Always maintain a positive, mentor-like tone.'
+            },
+            {
+              role: 'user',
+              content: `A student named ${displayName} submitted this learning reflection for their coding project: "${submission.learningReflection}". Please provide encouraging feedback that acknowledges their specific learning achievements and motivates them to continue growing.`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 200
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate feedback');
+      }
+
+      const data = await response.json();
+      const generatedFeedback = data.choices[0]?.message?.content || '';
+      
+      setFeedback(generatedFeedback);
+      
+      toast({
+        title: "AI Feedback Generated",
+        description: "Review and edit the feedback before submitting",
+      });
+    } catch (error) {
+      console.error('Error generating AI feedback:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate AI feedback. Please write manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingFeedback(false);
     }
   };
 
@@ -326,7 +382,20 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Admin Feedback (Optional)</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">Admin Feedback (Optional)</label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => generateAIFeedback(selectedSubmission)}
+                    disabled={isGeneratingFeedback}
+                    className="flex items-center gap-2"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {isGeneratingFeedback ? "Generating..." : "Generate AI Feedback"}
+                  </Button>
+                </div>
                 <Textarea
                   placeholder="Provide constructive feedback for the student..."
                   value={feedback}
