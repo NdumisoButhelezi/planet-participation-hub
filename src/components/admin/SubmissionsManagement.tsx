@@ -133,37 +133,69 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
     try {
       const user = users.find(u => u.id === submission.userId);
       const displayName = user?.fullName || user?.profile?.fullName || user?.email || "Student";
-      
-      const response = await fetch('/api/generate-feedback', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          studentName: displayName,
-          learningReflection: submission.learningReflection
-        })
-      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate feedback');
+      const payload = {
+        studentName: displayName,
+        learningReflection: submission.learningReflection,
+      };
+
+      // Try multiple endpoints so it works in different deploy environments
+      const endpoints = ['/api/generate-feedback', '/functions/v1/generate-feedback'];
+
+      let lastError: any = null;
+
+      for (const url of endpoints) {
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          const raw = await response.text();
+
+          if (!response.ok) {
+            let errorMsg = `Request failed (${response.status})`;
+            try {
+              const errJson = JSON.parse(raw);
+              errorMsg = errJson.error || errorMsg;
+            } catch {
+              // Not JSON, ignore
+            }
+            throw new Error(errorMsg);
+          }
+
+          let data: any = null;
+          try {
+            data = JSON.parse(raw);
+          } catch {
+            throw new Error('Invalid response format from AI service');
+          }
+
+          const generatedFeedback = (data.feedback || '').trim();
+          if (!generatedFeedback) {
+            throw new Error('AI returned empty feedback');
+          }
+
+          setFeedback(generatedFeedback);
+          toast({
+            title: "AI Feedback Generated",
+            description: "Review and edit the feedback before submitting",
+          });
+          return;
+        } catch (e: any) {
+          lastError = e;
+          // Try next endpoint
+        }
       }
 
-      const data = await response.json();
-      const generatedFeedback = data.feedback || '';
-      
-      setFeedback(generatedFeedback);
-      
-      toast({
-        title: "AI Feedback Generated",
-        description: "Review and edit the feedback before submitting",
-      });
+      // If we've reached here, all attempts failed
+      throw lastError || new Error('Unable to reach AI feedback service');
     } catch (error) {
       console.error('Error generating AI feedback:', error);
       toast({
-        title: "Error",
-        description: "Failed to generate AI feedback. Please write manually.",
+        title: "AI feedback unavailable",
+        description: "Sorry, the AI service is temporarily unavailable. Please try again later or write feedback manually.",
         variant: "destructive",
       });
     } finally {
