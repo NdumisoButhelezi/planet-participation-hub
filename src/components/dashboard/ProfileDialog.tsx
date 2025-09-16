@@ -3,9 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { db, auth } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import UserQRCode from "@/components/verification/UserQRCode";
 
 interface ProfileDialogProps {
@@ -13,34 +17,45 @@ interface ProfileDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-interface UserProfile {
-  fullName: string;
-  studentNumber: string;
-  email: string;
-  phoneNumber: string;
-  course: string;
-  yearOfStudy: string;
-  aiInterestArea: string;
-  linkedinProfile: string;
-  githubProfile: string;
-  learningStyle: string;
-}
+const profileSchema = z.object({
+  fullName: z.string().min(2, "Full name must be at least 2 characters").max(50, "Full name must be less than 50 characters"),
+  studentNumber: z.string().regex(/^\d{8}$/, "Student number must be exactly 8 digits"),
+  email: z.string().email("Please enter a valid email address"),
+  phoneNumber: z.string().regex(/^[\+]?[1-9][\d]{0,15}$/, "Please enter a valid phone number"),
+  course: z.string().min(2, "Course is required"),
+  yearOfStudy: z.string().min(1, "Year of study is required"),
+  aiInterestArea: z.string().min(3, "AI interest area must be at least 3 characters"),
+  linkedinProfile: z.string().optional().refine((val) => !val || val === "" || /^https?:\/\/(www\.)?linkedin\.com\/in\//.test(val), {
+    message: "Please enter a valid LinkedIn profile URL"
+  }),
+  githubProfile: z.string().optional().refine((val) => !val || val === "" || /^https?:\/\/(www\.)?github\.com\//.test(val), {
+    message: "Please enter a valid GitHub profile URL"
+  }),
+  learningStyle: z.string().min(1, "Please select a learning style"),
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
 
 const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
   const { toast } = useToast();
-  const [profile, setProfile] = useState<UserProfile>({
-    fullName: "",
-    studentNumber: "",
-    email: "",
-    phoneNumber: "",
-    course: "",
-    yearOfStudy: "",
-    aiInterestArea: "",
-    linkedinProfile: "",
-    githubProfile: "",
-    learningStyle: ""
-  });
   const [userName, setUserName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const form = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      fullName: "",
+      studentNumber: "",
+      email: "",
+      phoneNumber: "",
+      course: "",
+      yearOfStudy: "",
+      aiInterestArea: "",
+      linkedinProfile: "",
+      githubProfile: "",
+      learningStyle: "",
+    },
+  });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -53,7 +68,18 @@ const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
         if (docSnap.exists()) {
           const userData = docSnap.data();
           if (userData.profile) {
-            setProfile(userData.profile);
+            form.reset({
+              fullName: userData.profile.fullName || "",
+              studentNumber: userData.profile.studentNumber || "",
+              email: userData.profile.email || "",
+              phoneNumber: userData.profile.phoneNumber || "",
+              course: userData.profile.course || "",
+              yearOfStudy: userData.profile.yearOfStudy || "",
+              aiInterestArea: userData.profile.aiInterestArea || "",
+              linkedinProfile: userData.profile.linkedinProfile || "",
+              githubProfile: userData.profile.githubProfile || "",
+              learningStyle: userData.profile.learningStyle || "",
+            });
           }
           setUserName(userData.name || "User");
         }
@@ -65,19 +91,16 @@ const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
     if (open) {
       fetchProfile();
     }
-  }, [open]);
+  }, [open, form]);
 
-  const handleChange = (field: keyof UserProfile) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setProfile(prev => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data: ProfileFormData) => {
     const userId = auth.currentUser?.uid;
     if (!userId) return;
 
+    setIsLoading(true);
     try {
       await updateDoc(doc(db, "users", userId), {
-        profile: profile
+        profile: data
       });
 
       toast({
@@ -91,6 +114,8 @@ const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
         description: "Failed to update profile",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -108,83 +133,171 @@ const ProfileDialog = ({ open, onOpenChange }: ProfileDialogProps) => {
             )}
           </div>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <Input
-            placeholder="Full Name"
-            value={profile.fullName}
-            onChange={handleChange("fullName")}
-          />
-          
-          <Input
-            placeholder="Student Number"
-            value={profile.studentNumber}
-            onChange={handleChange("studentNumber")}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              type="email"
-              placeholder="Email"
-              value={profile.email}
-              onChange={handleChange("email")}
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your full name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <Input
-              placeholder="Phone Number"
-              value={profile.phoneNumber}
-              onChange={handleChange("phoneNumber")}
+            
+            <FormField
+              control={form.control}
+              name="studentNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Student Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter 8-digit student number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              placeholder="Course"
-              value={profile.course}
-              onChange={handleChange("course")}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Enter your email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your phone number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="course"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Course</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your course" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="yearOfStudy"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Year of Study</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your year of study" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="aiInterestArea"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>AI Interest Area</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your AI interest area" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <Input
-              placeholder="Year of Study"
-              value={profile.yearOfStudy}
-              onChange={handleChange("yearOfStudy")}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="linkedinProfile"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>LinkedIn Profile (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://linkedin.com/in/username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="githubProfile"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>GitHub Profile (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://github.com/username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="learningStyle"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Preferred Learning Style</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select your learning style" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="solo">Solo</SelectItem>
+                      <SelectItem value="teamwork">Teamwork</SelectItem>
+                      <SelectItem value="both">Both</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <Input
-            placeholder="AI Interest Area"
-            value={profile.aiInterestArea}
-            onChange={handleChange("aiInterestArea")}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              placeholder="LinkedIn Profile"
-              value={profile.linkedinProfile}
-              onChange={handleChange("linkedinProfile")}
-            />
-            <Input
-              placeholder="GitHub Profile"
-              value={profile.githubProfile}
-              onChange={handleChange("githubProfile")}
-            />
-          </div>
-
-          <Select 
-            value={profile.learningStyle}
-            onValueChange={(value) => setProfile(prev => ({ ...prev, learningStyle: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Preferred Learning Style" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="solo">Solo</SelectItem>
-              <SelectItem value="teamwork">Teamwork</SelectItem>
-              <SelectItem value="both">Both</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <DialogFooter>
-          <Button onClick={handleSubmit}>Save Changes</Button>
-        </DialogFooter>
+            <DialogFooter>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
