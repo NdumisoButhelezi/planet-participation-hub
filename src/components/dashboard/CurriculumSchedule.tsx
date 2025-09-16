@@ -11,6 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { auth, db } from "@/lib/firebase";
 import { addDoc, collection, query, where, getDocs, onSnapshot, updateDoc, doc } from "firebase/firestore";
@@ -18,6 +22,15 @@ import { User, Submission } from "@/types/user";
 import { WeeklySchedule, formatDate } from "@/utils/dateUtils";
 import { addDays, format, differenceInDays } from "date-fns";
 import FeedbackDialog from "./FeedbackDialog";
+
+const weeklyReflectionSchema = z.object({
+  projectLink: z.string().url("Please enter a valid URL").min(1, "Project link is required"),
+  socialMediaLink: z.string().url("Please enter a valid URL").min(1, "Social media link is required"),
+  peersEngaged: z.string().regex(/^\d+$/, "Must be a number").refine(val => parseInt(val) >= 0, "Must be 0 or greater"),
+  learningReflection: z.string().min(50, "Reflection must be at least 50 characters").max(1000, "Reflection must be less than 1000 characters"),
+});
+
+type WeeklyReflectionFormData = z.infer<typeof weeklyReflectionSchema>;
 
 interface WeeklyTask {
   week: number;
@@ -126,15 +139,22 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
   const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string>("");
   const [selectedSubmissionStatus, setSelectedSubmissionStatus] = useState<string>("");
-  const [projectLink, setProjectLink] = useState("");
-  const [socialMediaLink, setSocialMediaLink] = useState("");
-  const [peersEngaged, setPeersEngaged] = useState("0");
-  const [learningReflection, setLearningReflection] = useState("");
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [showVideoMap, setShowVideoMap] = useState<Record<number, boolean>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+
+  const form = useForm<WeeklyReflectionFormData>({
+    resolver: zodResolver(weeklyReflectionSchema),
+    defaultValues: {
+      projectLink: "",
+      socialMediaLink: "",
+      peersEngaged: "0",
+      learningReflection: "",
+    },
+  });
 
   useEffect(() => {
     const userId = auth.currentUser?.uid;
@@ -168,15 +188,10 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
     }));
   };
 
-  const handleSubmitReflection = async () => {
-    if (!learningReflection.trim() || !selectedWeek) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleSubmitReflection = async (data: WeeklyReflectionFormData) => {
+    if (!selectedWeek || isSubmitting) return;
+    
+    setIsSubmitting(true);
 
     try {
       const userId = auth.currentUser?.uid;
@@ -201,13 +216,13 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
       if (!existingSubmissionDocs.empty) {
         const submissionDoc = existingSubmissionDocs.docs[0];
         await updateDoc(doc(db, "submissions", submissionDoc.id), {
-          content: learningReflection,
-          projectLink,
-          socialMediaLink,
-          peersEngaged: parseInt(peersEngaged),
+          content: data.learningReflection,
+          projectLink: data.projectLink,
+          socialMediaLink: data.socialMediaLink,
+          peersEngaged: parseInt(data.peersEngaged),
           status: "pending",
           updatedAt: new Date(),
-          learningReflection
+          learningReflection: data.learningReflection
         });
         
         toast({
@@ -218,13 +233,13 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
         await addDoc(collection(db, "submissions"), {
           userId,
           taskId: `week-${selectedWeek}`,
-          content: learningReflection,
-          projectLink,
-          socialMediaLink,
-          peersEngaged: parseInt(peersEngaged),
+          content: data.learningReflection,
+          projectLink: data.projectLink,
+          socialMediaLink: data.socialMediaLink,
+          peersEngaged: parseInt(data.peersEngaged),
           status: "pending",
           createdAt: new Date(),
-          learningReflection
+          learningReflection: data.learningReflection
         });
         
         toast({
@@ -245,10 +260,7 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
         });
       }
 
-      setProjectLink("");
-      setSocialMediaLink("");
-      setPeersEngaged("0");
-      setLearningReflection("");
+      form.reset();
       setIsDialogOpen(false);
     } catch (error) {
       console.error("Error submitting reflection:", error);
@@ -257,6 +269,8 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
         description: "Failed to submit reflection",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -363,18 +377,17 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
       );
       
       if (existingSubmission) {
-        setProjectLink(existingSubmission.projectLink || "");
-        setSocialMediaLink(existingSubmission.socialMediaLink || "");
-        setPeersEngaged(existingSubmission.peersEngaged?.toString() || "0");
-        setLearningReflection(existingSubmission.learningReflection || "");
+        form.reset({
+          projectLink: existingSubmission.projectLink || "",
+          socialMediaLink: existingSubmission.socialMediaLink || "",
+          peersEngaged: existingSubmission.peersEngaged?.toString() || "0",
+          learningReflection: existingSubmission.learningReflection || "",
+        });
       } else {
-        setProjectLink("");
-        setSocialMediaLink("");
-        setPeersEngaged("0");
-        setLearningReflection("");
+        form.reset();
       }
     }
-  }, [selectedWeek, isDialogOpen, submissions]);
+  }, [selectedWeek, isDialogOpen, submissions, form]);
 
   return (
     <>
@@ -518,48 +531,84 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Input
-                placeholder="Project GitHub/Drive Link"
-                value={projectLink}
-                onChange={(e) => setProjectLink(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <Input
-                placeholder="Social Media Post Link"
-                value={socialMediaLink}
-                onChange={(e) => setSocialMediaLink(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <Input
-                type="number"
-                placeholder="Number of peers engaged with"
-                value={peersEngaged}
-                onChange={(e) => setPeersEngaged(e.target.value)}
-                min="0"
-                className="w-full"
-              />
-            </div>
-            <div className="space-y-2">
-              <Textarea
-                placeholder="Write your reflection about what you learned..."
-                value={learningReflection}
-                onChange={(e) => setLearningReflection(e.target.value)}
-                className="min-h-[150px] w-full"
-              />
-            </div>
-            <Button 
-              className="w-full bg-blue-600 hover:bg-blue-700"
-              onClick={handleSubmitReflection}
-            >
-              {submissions.some(s => s.taskId === `week-${selectedWeek}`) 
-                ? "Update Submission" 
-                : "Submit Reflection"}
-            </Button>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmitReflection)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="projectLink"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Project Link *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Project GitHub/Drive Link" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="socialMediaLink"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Social Media Link *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Social Media Post Link" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="peersEngaged"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Peers Engaged</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="Number of peers engaged with" 
+                          {...field}
+                          min="0"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="learningReflection"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Learning Reflection *</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Write your reflection about what you learned... (minimum 50 characters)"
+                          {...field}
+                          className="min-h-[150px]"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button 
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Submitting..." : submissions.some(s => s.taskId === `week-${selectedWeek}`) 
+                    ? "Update Submission" 
+                    : "Submit Reflection"}
+                </Button>
+              </form>
+            </Form>
           </div>
         </DialogContent>
       </Dialog>

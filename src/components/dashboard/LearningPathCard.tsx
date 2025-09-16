@@ -6,6 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Play, CheckCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { ReactNode } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
+const reflectionSchema = z.object({
+  projectLink: z.string().url("Please enter a valid URL").min(1, "Project link is required"),
+  socialMediaLink: z.string().url("Please enter a valid URL").min(1, "Social media link is required"),
+  peersEngaged: z.string().regex(/^\d+$/, "Must be a number").refine(val => parseInt(val) >= 0, "Must be 0 or greater"),
+  learningReflection: z.string().min(50, "Reflection must be at least 50 characters").max(1000, "Reflection must be less than 1000 characters"),
+});
+
+type ReflectionFormData = z.infer<typeof reflectionSchema>;
 
 interface LearningPathCardProps {
   index: number;
@@ -41,6 +54,17 @@ const LearningPathCard = ({
   onSubmitReflection,
 }: LearningPathCardProps) => {
   const [showVideo, setShowVideo] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<ReflectionFormData>({
+    resolver: zodResolver(reflectionSchema),
+    defaultValues: {
+      projectLink,
+      socialMediaLink,
+      peersEngaged: peersEngaged || "0",
+      learningReflection,
+    },
+  });
 
   const toggleVideoPreview = () => {
     setShowVideo(prev => !prev);
@@ -96,42 +120,96 @@ const LearningPathCard = ({
           <span>Track Progress</span>
         </div>
 
-        <div className="space-y-4">
-          <Input
-            placeholder="Project GitHub/Drive Link"
-            value={projectLink}
-            onChange={(e) => onProjectLinkChange(e.target.value)}
-          />
-          
-          <Input
-            placeholder="Social Media Post Link"
-            value={socialMediaLink}
-            onChange={(e) => onSocialMediaLinkChange(e.target.value)}
-          />
-          
-          <Input
-            type="number"
-            placeholder="Number of peers engaged with"
-            value={peersEngaged}
-            onChange={(e) => onPeersEngagedChange(e.target.value)}
-            min="0"
-          />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(async (data) => {
+            if (isSubmitting) return;
+            setIsSubmitting(true);
+            try {
+              onProjectLinkChange(data.projectLink);
+              onSocialMediaLinkChange(data.socialMediaLink);
+              onPeersEngagedChange(data.peersEngaged);
+              onLearningReflectionChange(data.learningReflection);
+              await new Promise(resolve => setTimeout(resolve, 100)); // Allow state to update
+              onSubmitReflection(playlistUrl);
+            } finally {
+              setIsSubmitting(false);
+            }
+          })} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="projectLink"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project Link *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Project GitHub/Drive Link" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="socialMediaLink"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Social Media Link *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Social Media Post Link" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="peersEngaged"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Peers Engaged</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      placeholder="Number of peers engaged with" 
+                      {...field}
+                      min="0"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <Textarea
-            placeholder="Write your reflection about what you learned..."
-            value={learningReflection}
-            onChange={(e) => onLearningReflectionChange(e.target.value)}
-            className="min-h-[100px]"
-          />
+            <FormField
+              control={form.control}
+              name="learningReflection"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Learning Reflection *</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Write your reflection about what you learned... (minimum 50 characters)"
+                      {...field}
+                      className="min-h-[100px]"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <Button 
-            className="w-full bg-blue-600 hover:bg-blue-700"
-            onClick={() => onSubmitReflection(playlistUrl)}
-          >
-            Submit Reflection
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+            <Button 
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Submitting..." : "Submit Reflection"}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );
