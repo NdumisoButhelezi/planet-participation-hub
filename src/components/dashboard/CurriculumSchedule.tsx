@@ -378,13 +378,18 @@ const CurriculumSchedule = ({ programSchedule }: CurriculumScheduleProps) => {
       
       if (existingSubmission) {
         form.reset({
-          projectLink: existingSubmission.projectLink || "",
-          socialMediaLink: existingSubmission.socialMediaLink || "",
-          peersEngaged: existingSubmission.peersEngaged?.toString() || "0",
-          learningReflection: existingSubmission.learningReflection || "",
+          projectLink: existingSubmission?.projectLink || "",
+          socialMediaLink: existingSubmission?.socialMediaLink || "",
+          peersEngaged: existingSubmission?.peersEngaged?.toString() || "0",
+          learningReflection: existingSubmission?.learningReflection || existingSubmission?.content || "",
         });
       } else {
-        form.reset();
+        form.reset({
+          projectLink: "",
+          socialMediaLink: "",
+          peersEngaged: "0",
+          learningReflection: "",
+        });
       }
     }
   }, [selectedWeek, isDialogOpen, submissions, form]);
