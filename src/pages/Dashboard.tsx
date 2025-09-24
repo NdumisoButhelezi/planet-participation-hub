@@ -19,6 +19,7 @@ import DigitalIDCard from "@/components/dashboard/DigitalIDCard";
 import { calculateProgramSchedule } from "@/utils/dateUtils";
 import CommunityShowcase from "@/components/dashboard/CommunityShowcase";
 import LoadingTips from "@/components/shared/LoadingTips";
+import TimeExtensionNotification from "@/components/dashboard/TimeExtensionNotification";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -276,6 +277,8 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-6 py-8">
         <WelcomeSection user={user} />
+        
+        <TimeExtensionNotification user={user} />
         
         {programSchedule && (
           <div className="mt-6">

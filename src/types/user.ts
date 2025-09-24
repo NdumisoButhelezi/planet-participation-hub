@@ -34,6 +34,9 @@ export interface User {
   lastPointsAdjustmentDate?: Date | string;
   submissionTimeExtension?: number; // Number of additional days granted
   lastTimeExtensionDate?: Date | string;
+  previousDeadline?: Date | string; // Previous deadline before extension
+  extensionReason?: string; // Reason for the time extension
+  extensionDaysAdded?: number; // Number of days added in the last extension
   profile?: UserProfile;
   profileImage?: string; // Added profileImage property
   needsPasswordReset?: boolean; // Flag for admin-initiated password reset

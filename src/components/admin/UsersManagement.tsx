@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { calculateProgramSchedule } from "@/utils/dateUtils";
 
 interface UsersManagementProps {
   users: User[];
@@ -501,10 +502,20 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
       const currentExtension = userToExtend.submissionTimeExtension || 0;
       const newExtension = currentExtension + extensionDays;
       
-      // Update user in Firestore
+      // Store the previous deadline information for the user to see
+      const registrationDate = userToExtend.registrationDate || new Date();
+      const programSchedule = calculateProgramSchedule(registrationDate);
+      const previousDeadline = currentExtension > 0 ? 
+        addDays(programSchedule.endDate, currentExtension) : 
+        programSchedule.endDate;
+      
+      // Update user in Firestore with detailed extension information
       await updateDoc(doc(db, "users", userToExtend.id), {
         submissionTimeExtension: newExtension,
-        lastTimeExtensionDate: new Date()
+        lastTimeExtensionDate: new Date(),
+        previousDeadline: previousDeadline,
+        extensionReason: data.reason,
+        extensionDaysAdded: extensionDays
       });
       
       // Update local state
@@ -512,7 +523,10 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
         u.id === userToExtend.id ? { 
           ...u, 
           submissionTimeExtension: newExtension, 
-          lastTimeExtensionDate: new Date() 
+          lastTimeExtensionDate: new Date(),
+          previousDeadline: previousDeadline,
+          extensionReason: data.reason,
+          extensionDaysAdded: extensionDays
         } : u
       );
       onUserUpdate(updatedUsers);
@@ -521,7 +535,8 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
       const historyItem = {
         days: extensionDays,
         reason: data.reason,
-        date: new Date()
+        date: new Date(),
+        previousDeadline: previousDeadline
       };
       
       setExtensionHistory(prev => ({
@@ -531,7 +546,7 @@ const UsersManagement = ({ users, onUserUpdate }: UsersManagementProps) => {
       
       toast({
         title: "Time Extended",
-        description: `Successfully extended submission deadline by ${extensionDays} days for ${userToExtend.fullName || userToExtend.email}.`,
+        description: `Successfully extended submission deadline by ${extensionDays} days for ${userToExtend.fullName || userToExtend.email}. They will be notified of this change.`,
       });
       
       // Close dialog
