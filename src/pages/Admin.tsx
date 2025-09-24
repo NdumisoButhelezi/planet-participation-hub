@@ -60,10 +60,13 @@ const Admin = () => {
         if (currentUserData?.isAdmin) {
           // Set up real-time listeners only if user is admin
           const usersUnsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
-            const usersData = snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-            })) as User[];
+            const usersData = snapshot.docs.map(doc => {
+              const data = doc.data();
+              return {
+                ...data,
+                id: doc.id, // Ensure document ID takes precedence
+              };
+            }) as User[];
             setUsers(usersData);
           });
 
