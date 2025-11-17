@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { Sparkles } from "lucide-react";
+import { generateAIFeedback } from "@/lib/aiService";
 
 interface SubmissionsManagementProps {
   submissions: Submission[];
@@ -128,77 +129,103 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
     }
   };
 
-  const generateAIFeedback = async (submission: Submission) => {
+  const handleGenerateAIFeedback = async (submission: Submission) => {
     setIsGeneratingFeedback(true);
     try {
       const user = users.find(u => u.id === submission.userId);
       const displayName = user?.fullName || user?.profile?.fullName || user?.email || "Student";
 
-      const payload = {
-        studentName: displayName,
-        learningReflection: submission.learningReflection,
-      };
+      // Extract week number from taskId (e.g., "week-1" -> 1)
+      const weekMatch = submission.taskId.match(/week-(\d+)/);
+      const weekNumber = weekMatch ? parseInt(weekMatch[1]) : undefined;
+      const submissionType = submission.taskId.includes('playlist') ? 'playlist' : 'weekly';
 
-      // Try multiple endpoints so it works in different deploy environments
-      const endpoints = ['/api/generate-feedback', '/functions/v1/generate-feedback'];
+      // Try client-side AI service first (faster, no server needed)
+      try {
+        const result = await generateAIFeedback({
+          studentName: displayName,
+          learningReflection: submission.learningReflection,
+          submissionType,
+          weekNumber,
+          skillLevel: user?.skillLevel
+        });
 
-      let lastError: any = null;
+        setFeedback(result.feedback);
+        toast({
+          title: "AI Feedback Generated",
+          description: `Generated using ${result.model || 'AI'}. Review and edit before submitting.`,
+        });
+        return;
+      } catch (clientError: any) {
+        console.warn('Client-side AI failed, trying fallback endpoints:', clientError);
+        
+        // Fallback to Supabase Edge Function endpoints
+        const payload = {
+          studentName: displayName,
+          learningReflection: submission.learningReflection,
+        };
 
-      for (const url of endpoints) {
-        try {
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
+        const endpoints = ['/api/generate-feedback', '/functions/v1/generate-feedback'];
+        let lastError: any = clientError;
 
-          const raw = await response.text();
-
-          if (!response.ok) {
-            let errorMsg = `Request failed (${response.status})`;
-            try {
-              const errJson = JSON.parse(raw);
-              errorMsg = errJson.error || errorMsg;
-            } catch {
-              // Not JSON, ignore
-            }
-            throw new Error(errorMsg);
-          }
-
-          let data: any = null;
+        for (const url of endpoints) {
           try {
-            data = JSON.parse(raw);
-          } catch {
-            throw new Error('Invalid response format from AI service');
-          }
+            const response = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
+            });
 
-          const generatedFeedback = (data.feedback || '').trim();
-          if (!generatedFeedback) {
-            throw new Error('AI returned empty feedback');
-          }
+            const raw = await response.text();
 
-          setFeedback(generatedFeedback);
-          toast({
-            title: "AI Feedback Generated",
-            description: "Review and edit the feedback before submitting",
-          });
-          return;
-        } catch (e: any) {
-          lastError = e;
-          // Try next endpoint
+            if (!response.ok) {
+              let errorMsg = `Request failed (${response.status})`;
+              try {
+                const errJson = JSON.parse(raw);
+                errorMsg = errJson.error || errorMsg;
+              } catch {
+                // Not JSON, ignore
+              }
+              throw new Error(errorMsg);
+            }
+
+            let data: any = null;
+            try {
+              data = JSON.parse(raw);
+            } catch {
+              throw new Error('Invalid response format from AI service');
+            }
+
+            const generatedFeedback = (data.feedback || '').trim();
+            if (!generatedFeedback) {
+              throw new Error('AI returned empty feedback');
+            }
+
+            setFeedback(generatedFeedback);
+            toast({
+              title: "AI Feedback Generated",
+              description: "Review and edit the feedback before submitting",
+            });
+            return;
+          } catch (e: any) {
+            lastError = e;
+            // Try next endpoint
+          }
         }
-      }
 
-      // If we've reached here, all attempts failed
-      throw lastError || new Error('Unable to reach AI feedback service');
-    } catch (error) {
+        // If all attempts failed
+        throw lastError || new Error('Unable to reach AI feedback service');
+      }
+    } catch (error: any) {
       console.error('Error generating AI feedback:', error);
       toast({
         title: "AI feedback unavailable",
-        description: "Sorry, the AI service is temporarily unavailable. Please try again later or write feedback manually.",
+        description: error.message?.includes('API key') 
+          ? "OpenRouter API key not configured. Please set it in .env.local"
+          : "Sorry, the AI service is temporarily unavailable. Please try again later or write feedback manually.",
         variant: "destructive",
       });
-    } finally {
+      } finally {
       setIsGeneratingFeedback(false);
     }
   };
@@ -409,7 +436,7 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => generateAIFeedback(selectedSubmission)}
+                    onClick={() => handleGenerateAIFeedback(selectedSubmission)}
                     disabled={isGeneratingFeedback}
                     className="flex items-center gap-2"
                   >
