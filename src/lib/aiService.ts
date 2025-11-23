@@ -26,7 +26,7 @@ interface AIResponse {
  */
 export async function generateAIFeedback(request: FeedbackRequest): Promise<AIResponse> {
   if (!OPENROUTER_API_KEY || OPENROUTER_API_KEY === 'your_openrouter_api_key_here') {
-    throw new Error('OpenRouter API key not configured. Please set VITE_OPENROUTER_API_KEY in .env.local');
+    throw new Error('API_KEY_NOT_CONFIGURED');
   }
 
   const systemPrompt = buildSystemPrompt(request);
@@ -67,8 +67,18 @@ export async function generateAIFeedback(request: FeedbackRequest): Promise<AIRe
       throw new Error('AI returned empty feedback');
     }
 
+    // Clean up AI response - remove special tokens and formatting
+    const cleanedFeedback = feedback
+      .replace(/<s>/g, '') // Remove start token
+      .replace(/<\/s>/g, '') // Remove end token
+      .replace(/\[OUT\]/g, '') // Remove output markers
+      .replace(/\[\/OUT\]/g, '') // Remove closing output markers
+      .replace(/\[INST\]/g, '') // Remove instruction markers
+      .replace(/\[\/INST\]/g, '') // Remove closing instruction markers
+      .trim();
+
     return {
-      feedback: feedback.trim(),
+      feedback: cleanedFeedback,
       model: data.model || 'unknown'
     };
   } catch (error) {
@@ -81,13 +91,13 @@ export async function generateAIFeedback(request: FeedbackRequest): Promise<AIRe
  * Select the appropriate AI model based on request context
  */
 function selectModel(request: FeedbackRequest): string {
-  // Default: Fast and cost-effective model for general feedback
-  // You can switch to other models based on your needs:
-  // - 'anthropic/claude-3.5-sonnet' for detailed technical analysis
-  // - 'openai/gpt-4o-mini' for quick responses
-  // - 'google/gemini-pro-1.5' for longer context
+  // Using Mistral 7B Instruct (free) - Fast, reliable, and completely free!
+  // - 32,768 context window
+  // - $0/M tokens (completely free)
+  // - 100% uptime on DeepInfra
+  // - 45 tokens/second throughput
   
-  return 'openrouter/auto'; // Auto-selects best available model
+  return 'mistralai/mistral-7b-instruct:free';
 }
 
 /**
@@ -162,10 +172,13 @@ export async function testAIService(): Promise<boolean> {
  * Update pricing at: https://openrouter.ai/docs#models
  */
 export const AVAILABLE_MODELS = {
-  // Free/Cheap models
+  // Free models (CURRENTLY USING)
+  mistral7bFree: 'mistralai/mistral-7b-instruct:free', // FREE, 32k context, 100% uptime
+  
+  // Auto-selection
   auto: 'openrouter/auto', // Auto-selects best model
   
-  // Premium models (better quality)
+  // Premium models (better quality, paid)
   claude35Sonnet: 'anthropic/claude-3.5-sonnet',
   gpt4oMini: 'openai/gpt-4o-mini',
   geminiPro: 'google/gemini-pro-1.5',

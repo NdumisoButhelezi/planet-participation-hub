@@ -159,6 +159,11 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
       } catch (clientError: any) {
         console.warn('Client-side AI failed, trying fallback endpoints:', clientError);
         
+        // If API key not configured, don't try fallback endpoints
+        if (clientError.message === 'API_KEY_NOT_CONFIGURED') {
+          throw new Error('OpenRouter API key not configured. Please set VITE_OPENROUTER_API_KEY in .env.local');
+        }
+        
         // Fallback to Supabase Edge Function endpoints
         const payload = {
           studentName: displayName,
@@ -218,14 +223,22 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
       }
     } catch (error: any) {
       console.error('Error generating AI feedback:', error);
+      
+      let errorTitle = "AI feedback unavailable";
+      let errorDescription = "Sorry, the AI service is temporarily unavailable. Please try again later or write feedback manually.";
+      
+      if (error.message?.includes('API key') || error.message === 'API_KEY_NOT_CONFIGURED') {
+        errorTitle = "API Key Required";
+        errorDescription = "OpenRouter API key not configured. Get one from openrouter.ai/keys, add it to .env.local as VITE_OPENROUTER_API_KEY=your-key, then restart the dev server.";
+      }
+      
       toast({
-        title: "AI feedback unavailable",
-        description: error.message?.includes('API key') 
-          ? "OpenRouter API key not configured. Please set it in .env.local"
-          : "Sorry, the AI service is temporarily unavailable. Please try again later or write feedback manually.",
+        title: errorTitle,
+        description: errorDescription,
         variant: "destructive",
+        duration: 10000,
       });
-      } finally {
+    } finally {
       setIsGeneratingFeedback(false);
     }
   };
@@ -448,9 +461,12 @@ const SubmissionsManagement = ({ submissions, users, onSubmissionUpdate }: Submi
                   placeholder="Provide constructive feedback for the student..."
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
-                  rows={4}
-                  className="resize-none"
+                  rows={6}
+                  className="resize-y min-h-[120px] max-h-[400px]"
                 />
+                <p className="text-xs text-gray-500">
+                  Tip: AI-generated feedback is editable. Review and customize before submitting.
+                </p>
               </div>
               
               <div className="flex gap-3 pt-4">
