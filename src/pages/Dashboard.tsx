@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { addDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, collection, addDoc, getDocs, updateDoc, query, where, Timestamp, onSnapshot } from "firebase/firestore";
@@ -223,9 +224,18 @@ const Dashboard = () => {
     return <LoadingTips />;
   }
 
-  const programSchedule = user.registrationDate 
+  const baseProgramSchedule = user.registrationDate 
     ? calculateProgramSchedule(user.registrationDate) 
     : null;
+
+  // Adjust schedule end date to account for time extensions
+  const programSchedule = baseProgramSchedule && user.submissionTimeExtension
+    ? {
+        ...baseProgramSchedule,
+        endDate: addDays(baseProgramSchedule.endDate, user.submissionTimeExtension),
+        daysLeft: Math.max(0, Math.ceil((addDays(baseProgramSchedule.endDate, user.submissionTimeExtension).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))),
+      }
+    : baseProgramSchedule;
 
   const renderActiveSection = () => {
     switch (activeSection) {
