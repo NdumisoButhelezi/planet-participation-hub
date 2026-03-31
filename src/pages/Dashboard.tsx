@@ -224,9 +224,18 @@ const Dashboard = () => {
     return <LoadingTips />;
   }
 
-  const programSchedule = user.registrationDate 
+  const baseProgramSchedule = user.registrationDate 
     ? calculateProgramSchedule(user.registrationDate) 
     : null;
+
+  // Adjust schedule end date to account for time extensions
+  const programSchedule = baseProgramSchedule && user.submissionTimeExtension
+    ? {
+        ...baseProgramSchedule,
+        endDate: addDays(baseProgramSchedule.endDate, user.submissionTimeExtension),
+        daysLeft: Math.max(0, Math.ceil((addDays(baseProgramSchedule.endDate, user.submissionTimeExtension).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))),
+      }
+    : baseProgramSchedule;
 
   const renderActiveSection = () => {
     switch (activeSection) {
